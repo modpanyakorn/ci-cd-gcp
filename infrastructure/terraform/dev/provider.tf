@@ -1,13 +1,23 @@
-provider "vault" {
-  address = var.vault_addr
+terraform {
+  required_providers {
+    google = { source = "hashicorp/google" }
+    vault  = { source = "hashicorp/vault" }
+  }
 }
 
-data "vault_generic_secret" "gcp_creds" {
-  path = "gcp/static-account/my-dev-sa"
+provider "vault" {
+  address = var.vault_address # ex. https://vault.example.com
+  token   = var.vault_token
+}
+
+# ดึง Service‑Account JSON จาก Vault KV v2
+data "vault_kv_secret_v2" "gcp_sa" {
+  mount = "secret"
+  name  = "dev/gcp-sa"
 }
 
 provider "google" {
-  credentials = data.vault_generic_secret.gcp_creds.data["key"]
+  credentials = data.vault_kv_secret_v2.gcp_sa.data["key"]
   project     = var.project_id
   region      = var.region
   zone        = var.zone
