@@ -13,55 +13,60 @@ module "network" {
 
 # HAProxy (Public)
 module "haproxy_vm" {
-  source       = "./modules/compute"
-  name         = "haproxy-dev"
-  machine_type = "e2-micro"
-  zone         = var.zone
-  image        = var.image_ubuntu
-  subnetwork   = module.network.subnet_names["public-subnet"]
-  tags         = ["haproxy", "public"]
+  source           = "./modules/compute"
+  name             = "haproxy-dev"
+  machine_type     = "e2-micro"
+  zone             = var.zone
+  image            = var.image_ubuntu
+  subnetwork       = module.network.subnet_names["public-subnet"]
+  assign_public_ip = true
+  tags             = ["haproxy", "public"]
 }
 
 # Frontend
 module "frontend_vm" {
-  source       = "./modules/compute"
-  name         = "frontend-dev"
-  machine_type = "e2-micro"
-  zone         = var.zone
-  image        = var.image_ubuntu
-  subnetwork   = module.network.subnet_names["frontend-subnet"]
-  tags         = ["frontend"]
+  source           = "./modules/compute"
+  name             = "frontend-dev"
+  machine_type     = "e2-micro"
+  zone             = var.zone
+  image            = var.image_ubuntu
+  subnetwork       = module.network.subnet_names["frontend-subnet"]
+  assign_public_ip = false
+  tags             = ["frontend"]
 }
 
 # Backend
 module "backend_vm" {
-  source       = "./modules/compute"
-  name         = "backend-dev"
-  machine_type = "e2-micro"
-  zone         = var.zone
-  image        = var.image_ubuntu
-  subnetwork   = module.network.subnet_names["backend-subnet"]
-  tags         = ["backend"]
+  source           = "./modules/compute"
+  name             = "backend-dev"
+  machine_type     = "e2-micro"
+  zone             = var.zone
+  image            = var.image_ubuntu
+  subnetwork       = module.network.subnet_names["backend-subnet"]
+  assign_public_ip = false
+  tags             = ["backend"]
 }
 
 # MongoDB
 module "db_vm" {
-  source       = "./modules/compute"
-  name         = "mongo-dev"
-  machine_type = "e2-micro"
-  zone         = var.zone
-  image        = var.image_ubuntu
-  subnetwork   = module.network.subnet_names["db-subnet"]
-  tags         = ["db"]
+  source           = "./modules/compute"
+  name             = "mongo-dev"
+  machine_type     = "e2-micro"
+  zone             = var.zone
+  image            = var.image_ubuntu
+  subnetwork       = module.network.subnet_names["db-subnet"]
+  assign_public_ip = false
+  tags             = ["db"]
 }
 
 # devops vm
 module "devops_vm" {
-  source       = "./modules/compute"
-  name         = "devops-dev"
-  machine_type = "e2-micro"
-  zone         = var.zone
-  image        = var.image_ubuntu
-  subnetwork   = module.network.subnet_names["devops-subnet"]
-  tags         = ["devops"]
+  source           = "./modules/compute"
+  name             = "devops-dev"
+  machine_type     = "e2-micro"
+  zone             = var.zone
+  image            = var.image_ubuntu
+  subnetwork       = module.network.subnet_names["devops-subnet"]
+  assign_public_ip = true
+  tags             = ["devops"]
 }

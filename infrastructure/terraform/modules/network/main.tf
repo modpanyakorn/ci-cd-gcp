@@ -28,27 +28,6 @@ resource "google_compute_router_nat" "nat" {
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
-# เพิ่มใน modules/network/main.tf
-resource "google_compute_firewall" "allow_internal" {
-  name    = "${var.vpc_name}-allow-internal"
-  network = google_compute_network.vpc.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["0-65535"]
-  }
-  allow {
-    protocol = "udp"
-    ports    = ["0-65535"]
-  }
-  allow {
-    protocol = "icmp"
-  }
-
-  source_ranges = ["10.10.0.0/16"]
-  target_tags   = ["frontend", "backend", "db", "devops"]
-}
-
 resource "google_compute_firewall" "allow_ssh" {
   name    = "${var.vpc_name}-allow-ssh"
   network = google_compute_network.vpc.name
@@ -59,18 +38,53 @@ resource "google_compute_firewall" "allow_ssh" {
   }
 
   source_ranges = ["0.0.0.0/0"] # ควรจำกัดเป็น IP ของคุณ
-  target_tags   = ["haproxy", "public"]
+  target_tags   = ["public-subnet", "devops-subnet"]
 }
+
+# เพิ่มใน modules/network/main.tf
+resource "google_compute_firewall" "allow_internal" {
+  name    = "${var.vpc_name}-allow-internal"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+  # allow {
+  #   protocol = "udp"
+  #   ports    = ["0-65535"]
+  # }
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges = ["10.10.0.0/16"]
+  target_tags   = ["frontend-subnet", "backend-subnet", "db-subnet"]
+}
+
+resource "google_compute_firewall" "allow_haproxy_to_apps" {
+  name    = "${var.vpc_name}-allow-haproxy-apps"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3000", "3001"] # Frontend and backend ports
+  }
+
+  source_tags = ["haproxy"]
+  target_tags = ["frontend", "backend"]
+}
+
 
 resource "google_compute_firewall" "allow_http_https" {
   name    = "${var.vpc_name}-allow-web"
   network = google_compute_network.vpc.name
 
   allow {
-    protocol = "tcp"
+    protocol = "http"
     ports    = ["80", "443"]
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["haproxy", "public"]
+  target_tags   = ["public-subnet", "devops-subnet"]
 }
