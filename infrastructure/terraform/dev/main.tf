@@ -1,8 +1,8 @@
-provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
-}
+# provider "google" {
+#   project = var.project_id
+#   region  = var.region
+#   zone    = var.zone
+# }
 
 module "network" {
   source   = "./modules/network"
