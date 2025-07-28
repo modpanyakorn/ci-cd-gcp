@@ -27,3 +27,50 @@ resource "google_compute_router_nat" "nat" {
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
+
+# เพิ่มใน modules/network/main.tf
+resource "google_compute_firewall" "allow_internal" {
+  name    = "${var.vpc_name}-allow-internal"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["0-65535"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["0-65535"]
+  }
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges = ["10.10.0.0/16"]
+  target_tags   = ["frontend", "backend", "db", "devops"]
+}
+
+resource "google_compute_firewall" "allow_ssh" {
+  name    = "${var.vpc_name}-allow-ssh"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"] # ควรจำกัดเป็น IP ของคุณ
+  target_tags   = ["haproxy", "public"]
+}
+
+resource "google_compute_firewall" "allow_http_https" {
+  name    = "${var.vpc_name}-allow-web"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["haproxy", "public"]
+}

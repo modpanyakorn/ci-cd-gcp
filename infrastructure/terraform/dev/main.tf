@@ -11,15 +11,11 @@ module "network" {
   }
 }
 
-# locals {
-#   image_debian = "debian-cloud/debian-11"
-# }
-
 # HAProxy (Public)
 module "haproxy_vm" {
   source       = "./modules/compute"
   name         = "haproxy-dev"
-  machine_type = "e2-small"
+  machine_type = "e2-micro"
   zone         = var.zone
   image        = var.image_ubuntu
   subnetwork   = module.network.subnet_names["public-subnet"]
@@ -30,7 +26,7 @@ module "haproxy_vm" {
 module "frontend_vm" {
   source       = "./modules/compute"
   name         = "frontend-dev"
-  machine_type = "e2-medium"
+  machine_type = "e2-micro"
   zone         = var.zone
   image        = var.image_ubuntu
   subnetwork   = module.network.subnet_names["frontend-subnet"]
@@ -41,7 +37,7 @@ module "frontend_vm" {
 module "backend_vm" {
   source       = "./modules/compute"
   name         = "backend-dev"
-  machine_type = "e2-medium"
+  machine_type = "e2-micro"
   zone         = var.zone
   image        = var.image_ubuntu
   subnetwork   = module.network.subnet_names["backend-subnet"]
@@ -52,7 +48,7 @@ module "backend_vm" {
 module "db_vm" {
   source       = "./modules/compute"
   name         = "mongo-dev"
-  machine_type = "e2-small"
+  machine_type = "e2-micro"
   zone         = var.zone
   image        = var.image_ubuntu
   subnetwork   = module.network.subnet_names["db-subnet"]
@@ -63,7 +59,7 @@ module "db_vm" {
 module "devops_vm" {
   source       = "./modules/compute"
   name         = "devops-dev"
-  machine_type = "e2-medium"
+  machine_type = "e2-micro"
   zone         = var.zone
   image        = var.image_ubuntu
   subnetwork   = module.network.subnet_names["devops-subnet"]
