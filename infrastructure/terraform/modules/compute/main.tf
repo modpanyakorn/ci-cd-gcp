@@ -1,3 +1,4 @@
+# Static IP
 resource "google_compute_address" "static_ip" {
 
   count = var.assign_static_public_ip ? 1 : 0
@@ -8,6 +9,7 @@ resource "google_compute_address" "static_ip" {
 
 }
 
+# VM template
 resource "google_compute_instance" "this" {
   name         = var.name
   machine_type = var.machine_type
@@ -43,4 +45,3 @@ resource "google_compute_instance" "this" {
 
   tags = var.tags
 }
-

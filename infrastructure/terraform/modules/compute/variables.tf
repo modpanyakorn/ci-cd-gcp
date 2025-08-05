@@ -49,3 +49,8 @@ variable "disk_type" {
   description = "Type of the boot disk"
   type        = string
 }
+
+variable "project_id" {
+  description = "GCP Project ID"
+  type        = string
+}
