@@ -1,0 +1,3 @@
+infrastructure/terraform/dev/.terraform*
+infrastructure/terraform/dev/.env
+infrastructure/terraform/dev/credentials
