@@ -14,6 +14,7 @@ module "network" {
 
 # HAProxy (Public)
 module "haproxy_vm" {
+  project_id              = var.project_id
   service_account         = google_service_account.vm_service_account.email
   source                  = "../modules/compute"
   name                    = "haproxy-dev"
@@ -30,6 +31,7 @@ module "haproxy_vm" {
 
 # Frontend
 module "frontend_vm" {
+  project_id              = var.project_id
   service_account         = google_service_account.vm_service_account.email
   source                  = "../modules/compute"
   name                    = "frontend-dev"
@@ -46,6 +48,7 @@ module "frontend_vm" {
 
 # Backend
 module "backend_vm" {
+  project_id              = var.project_id
   service_account         = google_service_account.vm_service_account.email
   source                  = "../modules/compute"
   name                    = "backend-dev"
@@ -62,9 +65,10 @@ module "backend_vm" {
 
 # DB
 module "db_vm" {
+  project_id              = var.project_id
   service_account         = google_service_account.vm_service_account.email
   source                  = "../modules/compute"
-  name                    = "mongo-dev"
+  name                    = "db-dev"
   machine_type            = "e2-micro"
   zone                    = var.zone
   image                   = var.image
@@ -78,6 +82,7 @@ module "db_vm" {
 
 # DevOps
 module "devops_vm" {
+  project_id              = var.project_id
   service_account         = google_service_account.vm_service_account.email
   source                  = "../modules/compute"
   name                    = "devops-dev"
