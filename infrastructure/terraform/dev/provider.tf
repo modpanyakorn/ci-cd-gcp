@@ -1,7 +1,14 @@
 terraform {
+  required_version = ">=1.12.2"
   required_providers {
-    google = { source = "hashicorp/google" }
-    vault  = { source = "hashicorp/vault" }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.46.0"
+    }
+    vault = {
+      source  = "hashicorp/vault"
+      version = "~> 5.1.0"
+    }
   }
 }
 
