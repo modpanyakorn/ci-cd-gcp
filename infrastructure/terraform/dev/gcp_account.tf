@@ -12,6 +12,7 @@ resource "google_project_iam_member" "vm_service_account_roles" {
     "roles/logging.logWriter",       # Writing Log
     "roles/monitoring.metricWriter", # Writing Metrics
     "roles/storage.objectViewer",    # Read Cloud Storage
+    "roles/storage.objectAdmin"      # Writing GCS
   ])
 
   project = var.project_id
