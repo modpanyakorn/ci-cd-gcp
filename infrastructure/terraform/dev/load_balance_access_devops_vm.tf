@@ -24,6 +24,16 @@ resource "google_compute_instance_group" "devops_instance_group_lb" {
     name = "sonarqube-http"
     port = 8003
   }
+
+  named_port {
+    name = "mongoexpress-http"
+    port = 8004
+  }
+
+  named_port {
+    name = "cadvisor-http"
+    port = 8005
+  }
 }
 
 # Health Check for Jenkins
@@ -58,7 +68,25 @@ resource "google_compute_health_check" "sonarqube_health_check" {
   name = "sonarqube-lb-health-check"
   http_health_check {
     port         = 8003
-    request_path = "/api/system/status"
+    request_path = "/api/system/health"
+  }
+}
+
+# Health Check for Mongo Express
+resource "google_compute_health_check" "mongo_express_health_check" {
+  name = "mongoexpress-lb-health-check"
+  http_health_check {
+    port         = 8004
+    request_path = "/health"
+  }
+}
+
+# Health Check for cAdvisor
+resource "google_compute_health_check" "cadvisor_health_check" {
+  name = "cadvisor-lb-health-check"
+  http_health_check {
+    port         = 8005
+    request_path = "/healthz"
   }
 }
 
@@ -85,6 +113,16 @@ resource "google_compute_backend_service" "devops_backend_iap" {
       health_check = google_compute_health_check.sonarqube_health_check.self_link
       description  = "Backend service for Sonarqube with IAP"
     }
+    mongoexpress = {
+      port_name    = "mongoexpress-http"
+      health_check = google_compute_health_check.mongo_express_health_check.self_link
+      description  = "Backend service for Mongo Express with IAP"
+    }
+    cadvisor = {
+      port_name    = "cadvisor-http"
+      health_check = google_compute_health_check.cadvisor_health_check.self_link
+      description  = "Backend service for cAdvisor with IAP"
+    }
   }
 
   name                  = "${each.key}-backend-iap"
@@ -109,7 +147,7 @@ resource "google_iap_web_backend_service_iam_member" "iap_access" {
   for_each = {
     for combo in flatten([
       for email in var.members : [
-        for service_key in ["jenkins", "grafana", "prometheus", "sonarqube"] : {
+        for service_key in ["jenkins", "grafana", "prometheus", "sonarqube", "mongoexpress", "cadvisor"] : {
           email       = email
           service_key = service_key
         }
@@ -167,6 +205,18 @@ resource "google_compute_url_map" "devops_url_map" {
     path_rule {
       paths   = ["/sonarqube", "/sonarqube/*"]
       service = google_compute_backend_service.devops_backend_iap["sonarqube"].self_link
+    }
+
+    # Path Rule for Mongo Express
+    path_rule {
+      paths   = ["/mongoexpress", "/mongoexpress/*"]
+      service = google_compute_backend_service.devops_backend_iap["mongoexpress"].self_link
+    }
+
+    # Path Rule for cAdvisor
+    path_rule {
+      paths   = ["/cadvisor", "/cadvisor/*"]
+      service = google_compute_backend_service.devops_backend_iap["cadvisor"].self_link
     }
   }
 }
