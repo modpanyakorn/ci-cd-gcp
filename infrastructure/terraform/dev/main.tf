@@ -1,8 +1,9 @@
 # Define VPC, Subnets
 module "network" {
-  source   = "../modules/network"
-  region   = var.region
-  vpc_name = "dev-vpc"
+  source     = "../modules/network"
+  region     = var.region
+  vpc_name   = "dev-vpc"
+  create_nat = true
   subnets = {
     public-subnet   = { cidr = "10.10.0.0/24" },
     frontend-subnet = { cidr = "10.10.1.0/24" },
@@ -89,7 +90,7 @@ module "devops_vm" {
   machine_type            = "e2-small"
   zone                    = var.zone
   image                   = var.image
-  disk_size               = 16
+  disk_size               = 20
   disk_type               = "pd-balanced"
   subnetwork              = module.network.subnet_names["devops-subnet"]
   assign_public_ip        = false
