@@ -9,4 +9,4 @@ variable "region" {
 variable "subnets" { # map of { cidr = string }
   type = map(object({ cidr = string }))
 }
-variable "create_nat" { default = true }
+variable "create_nat" { default = false }
