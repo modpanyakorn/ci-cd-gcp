@@ -7,17 +7,22 @@ resource "google_compute_instance_group" "devops_instance_group_lb" {
 
   named_port {
     name = "jenkins-http"
-    port = 8080
+    port = 8000
   }
 
   named_port {
     name = "grafana-http"
-    port = 8081
+    port = 8001
   }
 
   named_port {
     name = "prometheus-http"
-    port = 8082
+    port = 8002
+  }
+
+  named_port {
+    name = "sonarqube-http"
+    port = 8003
   }
 }
 
@@ -25,7 +30,7 @@ resource "google_compute_instance_group" "devops_instance_group_lb" {
 resource "google_compute_health_check" "jenkins_health_check" {
   name = "jenkins-lb-health-check"
   http_health_check {
-    port         = 8080
+    port         = 8000
     request_path = "/login" # path of Jenkins
   }
 }
@@ -34,7 +39,7 @@ resource "google_compute_health_check" "jenkins_health_check" {
 resource "google_compute_health_check" "grafana_health_check" {
   name = "grafana-lb-health-check"
   http_health_check {
-    port         = 8081
+    port         = 8001
     request_path = "/api/health"
   }
 }
@@ -43,12 +48,21 @@ resource "google_compute_health_check" "grafana_health_check" {
 resource "google_compute_health_check" "prometheus_health_check" {
   name = "prometheus-lb-health-check"
   http_health_check {
-    port         = 8082
+    port         = 8002
     request_path = "/-/healthy"
   }
 }
 
-# Create Backend Service Jenkins, Grafana, Prometheus and enable IAP
+# Health Check for Sonarqube
+resource "google_compute_health_check" "sonarqube_health_check" {
+  name = "sonarqube-lb-health-check"
+  http_health_check {
+    port         = 8003
+    request_path = "/api/system/status"
+  }
+}
+
+# Create Backend Service Jenkins, Grafana, Prometheus, Sonarqube and enable IAP
 resource "google_compute_backend_service" "devops_backend_iap" {
   for_each = {
     jenkins = {
@@ -65,6 +79,11 @@ resource "google_compute_backend_service" "devops_backend_iap" {
       port_name    = "prometheus-http"
       health_check = google_compute_health_check.prometheus_health_check.self_link
       description  = "Backend service for Prometheus with IAP"
+    }
+    sonarqube = {
+      port_name    = "sonarqube-http"
+      health_check = google_compute_health_check.sonarqube_health_check.self_link
+      description  = "Backend service for Sonarqube with IAP"
     }
   }
 
@@ -90,7 +109,7 @@ resource "google_iap_web_backend_service_iam_member" "iap_access" {
   for_each = {
     for combo in flatten([
       for email in var.members : [
-        for service_key in ["jenkins", "grafana", "prometheus"] : {
+        for service_key in ["jenkins", "grafana", "prometheus", "sonarqube"] : {
           email       = email
           service_key = service_key
         }
@@ -142,6 +161,12 @@ resource "google_compute_url_map" "devops_url_map" {
     path_rule {
       paths   = ["/prometheus", "/prometheus/*"]
       service = google_compute_backend_service.devops_backend_iap["prometheus"].self_link
+    }
+
+    # Path Rule for Sonarqube
+    path_rule {
+      paths   = ["/sonarqube", "/sonarqube/*"]
+      service = google_compute_backend_service.devops_backend_iap["sonarqube"].self_link
     }
   }
 }

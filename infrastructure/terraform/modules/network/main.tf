@@ -117,7 +117,7 @@ resource "google_compute_firewall" "allow_lb_to_devops" {
 
   allow {
     protocol = "tcp"
-    ports    = ["8080", "8081", "8082"] #Services Port such as Jenkins, Grafana, Prometheus, ... 
+    ports    = ["8000", "8001", "8002", "8003"] #Services Port such as Jenkins, Grafana, Prometheus, Sonarqube
   }
 
   # IP Ranges of Google Load Balancer
@@ -125,4 +125,3 @@ resource "google_compute_firewall" "allow_lb_to_devops" {
 
   target_tags = ["devops"]
 }
-
