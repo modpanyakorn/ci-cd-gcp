@@ -1,0 +1,33 @@
+- name: Ensure nginx_proxy directory exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/nginx_proxy
+    state: directory
+
+- name: Load multiple variable files for templates render
+  ansible.builtin.include_vars:
+    file: "{{ item }}"
+  loop:
+    - ../../inventory/group_vars/frontend.yml
+    - ../../inventory/group_vars/nginx_proxy.yml
+  tags: ["load-vars"]
+
+- name: Render nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/nginx_proxy/nginx.conf
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/nginx_proxy/docker-compose.yml
+
+# - name: Deploy nginx_proxy stack # Ansible expect that running cause image changing (container restart)
+#   command: docker compose up -d --build
+#   args:
+#     chdir: /home/{{ ansible_user }}/ci-cd-gcp/nginx_proxy
+
+- name: Deploy docker-compose.yml # use thist instead
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ ansible_user }}/ci-cd-gcp/nginx_proxy
+    build: "always"
+    state: present
