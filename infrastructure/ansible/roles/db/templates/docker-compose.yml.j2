@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  mongo:
+    image: "{{ mongodb.image }}:{{ mongodb.tag }}"
+    container_name: mongodb
+    ports:
+      - "{{ mongodb.port }}:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      db_network:
+
+  mongodb-exporter:
+    image: bitnami/mongodb-exporter:0.47.0
+    container_name: mongodb_exporter
+    ports:
+      - "{{ mongodb.mongodb_exporter_port }}:9216"
+    environment:
+      MONGODB_URI: "mongodb://mongo:27017"
+    depends_on:
+      - mongo
+    networks:
+      db_network:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - "{{ exporters.node_exporter_port }}:9100"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - "/:/host:ro,rslave"
+    networks:
+      db_network:
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor-amd64:v0.51.0
+    container_name: cadvisor
+    ports:
+      - "{{ exporters.cadvisor_port }}:8080"
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    networks:
+      db_network:
+
+volumes:
+  mongo_data:
+
+networks:
+  db_network:
+    driver: bridge

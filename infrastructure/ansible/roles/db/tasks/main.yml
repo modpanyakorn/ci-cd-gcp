@@ -1,0 +1,20 @@
+- name: Ensure db directory exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/db
+    state: directory
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/db/docker-compose.yml
+
+# - name: Deploy db stack
+#   command: docker compose up -d --build
+#   args:
+#     chdir: /home/{{ ansible_user }}/ci-cd-gcp/db
+
+- name: Deploy db stack # use thist instead
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ ansible_user }}/ci-cd-gcp/db
+    build: "always"
+    state: present
