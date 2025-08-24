@@ -1,0 +1,33 @@
+- name: Ensure backend directory exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/backend
+    state: directory
+
+- name: Load multiple variable files for templates render
+  ansible.builtin.include_vars:
+    file: "{{ item }}"
+  loop:
+    - ../../inventory/group_vars/db.yml
+    - ../../inventory/group_vars/frontend.yml
+  tags: ["load-vars"]
+
+- name: Render .env for backend
+  template:
+    src: .env.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/backend/.env
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/backend/docker-compose.yml
+
+# - name: Deploy backend stack
+#   command: docker compose up -d --build
+#   args:
+#     chdir: /home/{{ ansible_user }}/ci-cd-gcp/backend
+
+- name: Deploy backend stack # use thist instead
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ ansible_user }}/ci-cd-gcp/backend
+    build: "always"
+    state: present

@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  backend:
+    image: "{{ backend.image }}:{{ backend.tag }}"
+    container_name: backend
+    ports:
+      - "{{ backend.env.port }}:3001"
+    restart: always
+    env_file:
+      - .env
+    networks:
+      backend_network:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - "{{ exporters.node_exporter_port }}:9100"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - "/:/host:ro,rslave"
+    networks:
+      backend_network:
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor-amd64:v0.51.0
+    container_name: cadvisor
+    ports:
+      - "{{ exporters.cadvisor_port }}:8080"
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    networks:
+      backend_network:
+
+networks:
+  backend_network:
+    driver: bridge
