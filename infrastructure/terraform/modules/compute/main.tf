@@ -9,12 +9,13 @@ resource "google_compute_address" "static_ip" {
 
 }
 
-# VM template
+# VMs template
 resource "google_compute_instance" "this" {
   name         = var.name
   machine_type = var.machine_type
   zone         = var.zone
 
+  allow_stopping_for_update = var.allow_stopping_for_update
   boot_disk {
     initialize_params {
       image = var.image
@@ -36,12 +37,18 @@ resource "google_compute_instance" "this" {
   service_account {
     email  = var.service_account
     scopes = ["cloud-platform"]
-    # scopes = "logging.write"
   }
 
   metadata = length(var.startup_script) > 0 ? {
     startup-script = var.startup_script
+    enable-oslogin = var.enable_os_login
   } : {}
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [
+      metadata["ssh-keys"]
+    ]
+  }
 }
