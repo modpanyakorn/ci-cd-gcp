@@ -1,8 +1,8 @@
-# Haproxy routing to Frontend
+# nginx_reverse_proxy routing to Frontend
 # Allow frontend Server 
 # for Backend configure CORS Origin
-resource "google_compute_firewall" "allow_haproxy_to_frontend" { # HaProxy --> Frontend
-  name    = "${var.vpc_name}-allow-haproxy-to-frontend"
+resource "google_compute_firewall" "allow_nginx_to_frontend" { # nginx --> Frontend
+  name    = "${var.vpc_name}-allow-nginx-to-frontend"
   network = google_compute_network.vpc.name
 
   log_config {
@@ -14,7 +14,7 @@ resource "google_compute_firewall" "allow_haproxy_to_frontend" { # HaProxy --> F
     ports    = ["3000"]
   }
 
-  source_tags = ["haproxy"]
+  source_tags = ["nginx-proxy"]
   target_tags = ["frontend"]
 }
 
@@ -29,8 +29,8 @@ resource "google_compute_firewall" "allow_devops_to_frontend_exporter" {
 
   allow {
     protocol = "tcp"
-    # Port 9100 for Node Exporter, 9102 cAdvisor
-    ports = ["9100", "9102"]
+    # Port 9100 for Node Exporter, 9102 cAdvisor, nginx exporter
+    ports = ["9100", "9102", "9104"]
   }
 
   # Source is the devops VM

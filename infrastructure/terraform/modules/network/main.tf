@@ -31,7 +31,7 @@ resource "google_compute_router_nat" "nat" {
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
-# Dev team access vm via ssh 
+# Dev team access vm via IAP (Identity Aware Proxy) 
 resource "google_compute_firewall" "allow_iap_access" {
   name    = "${var.vpc_name}-allow-iap-access"
   network = google_compute_network.vpc.name
@@ -44,5 +44,5 @@ resource "google_compute_firewall" "allow_iap_access" {
     ports    = ["22"]
   }
   source_ranges = ["35.235.240.0/20"]
-  target_tags   = ["haproxy", "private", "devops"]
+  # target_tags   = ["nginx-proxy", "private", "devops"]
 }

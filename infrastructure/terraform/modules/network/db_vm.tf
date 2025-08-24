@@ -28,8 +28,8 @@ resource "google_compute_firewall" "allow_devops_to_db_exporter" {
 
   allow {
     protocol = "tcp"
-    # Port 9100 for Node Exporter, 9103 mongodb exporter
-    ports = ["9100", "9103"]
+    # Port 9100 for Node Exporter, 9102 cAdvisor, 9103 mongodb exporter
+    ports = ["9100", "9102", "9103"]
   }
 
   # Source is the devops VM
