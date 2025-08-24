@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 3s
+  evaluation_interval: 3s
+
+scrape_configs:
+  # Scrape own Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  # Scrape Nginx Exporter (nginx_proxy + frontend)
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets:
+          - '{{ hostvars[groups["nginx_proxy"][0]].private_ip }}:{{ nginx_proxy.nginx_exporter_port }}'
+          - '{{ hostvars[groups["frontend"][0]].private_ip }}:{{ frontend.nginx_exporter_port }}'
+
+  # Scrape Node Exporter (ทุก VM)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+{% for host in groups["nginx_proxy"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.node_exporter_port }}'
+{% endfor %}
+{% for host in groups["frontend"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.node_exporter_port }}'
+{% endfor %}
+{% for host in groups["backend"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.node_exporter_port }}'
+{% endfor %}
+{% for host in groups["db"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.node_exporter_port }}'
+{% endfor %}
+
+  # Scrape cAdvisor (ทุก VM)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets:
+{% for host in groups["nginx_proxy"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.cadvisor_port }}'
+{% endfor %}
+{% for host in groups["frontend"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.cadvisor_port }}'
+{% endfor %}
+{% for host in groups["backend"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.cadvisor_port }}'
+{% endfor %}
+{% for host in groups["db"] %}
+          - '{{ hostvars[host].private_ip }}:{{ exporters.cadvisor_port }}'
+{% endfor %}
+
+  # Scrape MongoDB Exporter
+  - job_name: 'mongodb-exporter'
+    static_configs:
+      - targets:
+          - '{{ hostvars[groups["db"][0]].private_ip }}:{{ mongodb.mongodb_exporter_port }}'
