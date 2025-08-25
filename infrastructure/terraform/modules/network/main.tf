@@ -44,5 +44,22 @@ resource "google_compute_firewall" "allow_iap_access" {
     ports    = ["22"]
   }
   source_ranges = ["35.235.240.0/20"]
-  # target_tags   = ["nginx-proxy", "private", "devops"]
+  target_tags   = ["nginx-proxy", "private", "devops"]
+}
+
+
+# devops-vm (control node) access to other vm via ssh (port 22)
+resource "google_compute_firewall" "allow_devops_to_all_vm" {
+  name    = "${var.vpc_name}-devops-to-all-vm"
+  network = google_compute_network.vpc.name
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+  source_tags = ["devops"]
+  target_tags = ["nginx-proxy", "private"]
 }
