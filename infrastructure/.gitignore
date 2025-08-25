@@ -1,0 +1,7 @@
+terraform/dev/.terraform*
+terraform/dev/.env
+terraform/dev/credentials
+
+ansible/collections
+
+venv
