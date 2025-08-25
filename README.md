@@ -11,19 +11,8 @@ ci-cd-gcp/
 ├─ application/
 │  ├─ public/
 │  │  ├─ public/
-│  │  │  ├─ apple-touch-icon.png
-│  │  │  ├─ favicon.ico
-│  │  │  ├─ index.html
-│  │  │  ├─ loader.png
-│  │  │  ├─ logo192.png
-│  │  │  ├─ logo512.png
-│  │  │  ├─ manifest.json
-│  │  │  └─ robots.txt
 │  │  ├─ src/
 │  │  │  ├─ assets/
-│  │  │  │  ├─ loader.gif
-│  │  │  │  ├─ logo.svg
-│  │  │  │  └─ robot.gif
 │  │  │  ├─ components/
 │  │  │  │  ├─ ChatContainer.jsx
 │  │  │  │  ├─ ChatInput.jsx
@@ -40,15 +29,12 @@ ci-cd-gcp/
 │  │  │  ├─ App.js
 │  │  │  ├─ index.css
 │  │  │  └─ index.js
-│  │  ├─ .dockerignore
 │  │  ├─ .env
-│  │  ├─ .gitignore
 │  │  ├─ docker-compose-frontend-vm.yml
 │  │  ├─ Dockerfile
 │  │  ├─ nginx.conf
 │  │  ├─ package-lock.json
 │  │  ├─ package.json
-│  │  ├─ README.md
 │  │  └─ yarn.lock
 │  ├─ server/
 │  │  ├─ controllers/
@@ -60,7 +46,6 @@ ci-cd-gcp/
 │  │  ├─ routes/
 │  │  │  ├─ auth.js
 │  │  │  └─ messages.js
-│  │  ├─ .dockerignore
 │  │  ├─ .env
 │  │  ├─ docker-compose-backend-vm.yml
 │  │  ├─ Dockerfile
@@ -68,7 +53,6 @@ ci-cd-gcp/
 │  │  ├─ package-lock.json
 │  │  ├─ package.json
 │  │  └─ yarn.lock
-│  ├─ .gitignore
 │  ├─ docker-compose.yml
 │  └─ README.md
 │
