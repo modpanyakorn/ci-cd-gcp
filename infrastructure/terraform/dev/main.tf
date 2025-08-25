@@ -13,87 +13,118 @@ module "network" {
   }
 }
 
-# HAProxy (Public)
-module "haproxy_vm" {
-  project_id              = var.project_id
-  service_account         = google_service_account.vm_service_account.email
-  source                  = "../modules/compute"
-  name                    = "haproxy-dev"
-  machine_type            = "e2-micro"
-  zone                    = var.zone
-  image                   = var.image
-  disk_size               = 10
-  disk_type               = "pd-balanced"
-  subnetwork              = module.network.subnet_names["public-subnet"]
-  assign_public_ip        = true # need public ip
-  assign_static_public_ip = true # public ip are static even restart vm
-  tags                    = ["public", "haproxy"]
+# nginx (Public)
+module "nginx_vm" {
+  project_id                = var.project_id
+  service_account           = google_service_account.vm_service_account.email
+  source                    = "../modules/compute"
+  name                      = "nginx-dev"
+  machine_type              = "e2-micro"
+  zone                      = var.zone
+  image                     = var.image
+  disk_size                 = 10
+  disk_type                 = "pd-balanced"
+  subnetwork                = module.network.subnet_names["public-subnet"]
+  assign_public_ip          = true # need public ip
+  assign_static_public_ip   = true # public ip are static even restart vm
+  allow_stopping_for_update = true
+  tags                      = ["public", "nginx-proxy"]
+  enable_os_login           = true
+  startup_script            = <<-EOT
+    #!/bin/bash
+    sudo mount --make-rshared /
+  EOT
 }
 
 # Frontend
 module "frontend_vm" {
-  project_id              = var.project_id
-  service_account         = google_service_account.vm_service_account.email
-  source                  = "../modules/compute"
-  name                    = "frontend-dev"
-  machine_type            = "e2-micro"
-  zone                    = var.zone
-  image                   = var.image
-  disk_size               = 10
-  disk_type               = "pd-balanced"
-  subnetwork              = module.network.subnet_names["frontend-subnet"]
-  assign_public_ip        = false
-  assign_static_public_ip = false
-  tags                    = ["private", "frontend"]
+  project_id                = var.project_id
+  service_account           = google_service_account.vm_service_account.email
+  source                    = "../modules/compute"
+  name                      = "frontend-dev"
+  machine_type              = "e2-micro"
+  zone                      = var.zone
+  image                     = var.image
+  disk_size                 = 10
+  disk_type                 = "pd-balanced"
+  subnetwork                = module.network.subnet_names["frontend-subnet"]
+  assign_public_ip          = false
+  assign_static_public_ip   = false
+  allow_stopping_for_update = true
+  tags                      = ["private", "frontend"]
+  enable_os_login           = true
+  startup_script            = <<-EOT
+    #!/bin/bash
+    sudo mount --make-rshared /
+  EOT
 }
 
 # Backend
 module "backend_vm" {
-  project_id              = var.project_id
-  service_account         = google_service_account.vm_service_account.email
-  source                  = "../modules/compute"
-  name                    = "backend-dev"
-  machine_type            = "e2-micro"
-  zone                    = var.zone
-  image                   = var.image
-  disk_size               = 10
-  disk_type               = "pd-balanced"
-  subnetwork              = module.network.subnet_names["backend-subnet"]
-  assign_public_ip        = false
-  assign_static_public_ip = false
-  tags                    = ["private", "backend"]
+  project_id                = var.project_id
+  service_account           = google_service_account.vm_service_account.email
+  source                    = "../modules/compute"
+  name                      = "backend-dev"
+  machine_type              = "e2-micro"
+  zone                      = var.zone
+  image                     = var.image
+  disk_size                 = 11
+  disk_type                 = "pd-balanced"
+  subnetwork                = module.network.subnet_names["backend-subnet"]
+  assign_public_ip          = false
+  assign_static_public_ip   = false
+  allow_stopping_for_update = true
+  tags                      = ["private", "backend"]
+  enable_os_login           = true
+  startup_script            = <<-EOT
+    #!/bin/bash
+    sudo mount --make-rshared /
+  EOT
 }
 
 # DB
 module "db_vm" {
-  project_id              = var.project_id
-  service_account         = google_service_account.vm_service_account.email
-  source                  = "../modules/compute"
-  name                    = "db-dev"
-  machine_type            = "e2-micro"
-  zone                    = var.zone
-  image                   = var.image
-  disk_size               = 10
-  disk_type               = "pd-balanced"
-  subnetwork              = module.network.subnet_names["db-subnet"]
-  assign_public_ip        = false
-  assign_static_public_ip = false
-  tags                    = ["private", "db"]
+  project_id                = var.project_id
+  service_account           = google_service_account.vm_service_account.email
+  source                    = "../modules/compute"
+  name                      = "db-dev"
+  machine_type              = "e2-micro"
+  zone                      = var.zone
+  image                     = var.image
+  disk_size                 = 10
+  disk_type                 = "pd-balanced"
+  subnetwork                = module.network.subnet_names["db-subnet"]
+  assign_public_ip          = false
+  assign_static_public_ip   = false
+  allow_stopping_for_update = true
+  tags                      = ["private", "db"]
+  enable_os_login           = true
+  startup_script            = <<-EOT
+    #!/bin/bash
+    sudo mount --make-rshared /
+  EOT
+
 }
 
 # DevOps
 module "devops_vm" {
-  project_id              = var.project_id
-  service_account         = google_service_account.vm_service_account.email
-  source                  = "../modules/compute"
-  name                    = "devops-dev"
-  machine_type            = "e2-small"
-  zone                    = var.zone
-  image                   = var.image
-  disk_size               = 20
-  disk_type               = "pd-balanced"
-  subnetwork              = module.network.subnet_names["devops-subnet"]
-  assign_public_ip        = false
-  assign_static_public_ip = false
-  tags                    = ["devops"]
+  project_id                = var.project_id
+  service_account           = google_service_account.vm_service_account.email
+  source                    = "../modules/compute"
+  name                      = "devops-dev"
+  machine_type              = "e2-standard-2"
+  zone                      = var.zone
+  image                     = var.image
+  disk_size                 = 40
+  disk_type                 = "pd-balanced"
+  subnetwork                = module.network.subnet_names["devops-subnet"]
+  assign_public_ip          = false
+  assign_static_public_ip   = false
+  allow_stopping_for_update = true
+  tags                      = ["devops"]
+  enable_os_login           = true
+  startup_script            = <<-EOT
+    #!/bin/bash
+    sudo mount --make-rshared /
+  EOT
 }
