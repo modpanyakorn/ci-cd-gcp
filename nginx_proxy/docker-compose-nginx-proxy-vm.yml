@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  nginx-proxy:
+    image: nginx:stable
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    command: ["nginx", "-g", "daemon off;"]
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      haproxy_network:
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:edge
+    container_name: nginx_exporter
+    ports:
+      - "9104:9113"
+    command: [
+      "--nginx.scrape-uri=http://nginx-proxy:80/stub_status"
+    ]
+    depends_on:
+      - nginx-proxy
+    restart: always
+    networks:
+      haproxy_network:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - "--path.rootfs=/host"
+    # network_mode: host
+    ports:
+      - "9100:9100"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - "/:/host:ro,rslave"
+    networks:
+      haproxy_network:
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor-amd64:v0.51.0
+    container_name: cadvisor
+    ports:
+      - "9102:8080"
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    networks:
+      haproxy_network:
+
+networks:
+  haproxy_network:
+    driver: bridge
