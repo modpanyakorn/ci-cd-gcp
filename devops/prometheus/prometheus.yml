@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 3s
+  evaluation_interval: 3s
+
+scrape_configs:
+  # Scrape own Prometheus 
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  # Scrape Nginx Exporter all VMs
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets:
+          - '10.10.0.6:9104' # haproxy-vm
+          - '10.10.1.2:9104' # frontend-vm
+
+  # Scrape Node Exporter all VMs
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+          - '10.10.0.6:9100'   # haproxy-vm
+          - '10.10.1.2:9100'   # frontend-vm
+          - '10.10.2.2:9100'   # backend-vm
+          - '10.10.3.2:9100'   # db-vm
+
+  # Scrape cAdvisor all VMs
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets:
+          - '10.10.0.6:9102'   # haproxy-vm
+          - '10.10.1.2:9102'   # frontend-vm
+          - '10.10.2.2:9102'   # backend-vm
+          - '10.10.3.2:9102'   # db-vm
+
+  # Scrape MongoDB Exporter
+  - job_name: 'mongodb-exporter'
+    static_configs:
+      - targets:
+          - '10.10.3.2:9103'   # db-vm
