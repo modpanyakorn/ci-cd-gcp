@@ -1,8 +1,22 @@
 version: "3.8"
 
 services:
+  vault:
+    image: hashicorp/vault:1.20.2
+    container_name: vault
+    ports:
+      - "8200:8200"
+    env_file:
+      - .env
+    cap_add:
+      - IPC_LOCK # prevent Vault from swapping to disk
+    command: "server -dev"
+    networks:
+      devops_network:
+
   docker:
     image: docker:dind
+    container_name: docker_dind
     privileged: true
     restart: unless-stopped
     environment:
@@ -23,17 +37,15 @@ services:
       context: .
       dockerfile: Dockerfile.jenkins
     container_name: jenkins_blueocean
+    user: root
     restart: unless-stopped
-    environment:
-      - DOCKER_HOST=tcp://docker:2376
-      - DOCKER_CERT_PATH=/certs/client
-      - DOCKER_TLS_VERIFY=1
     ports:
       - "{{ jenkins.port }}:8080"
       - "50000:50000"
     volumes:
       - jenkins-data:/var/jenkins_home
       - jenkins-docker-certs:/certs/client:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - docker
     networks:
@@ -144,4 +156,5 @@ volumes:
 
 networks:
   devops_network:
+    name: devops_network
     driver: bridge
