@@ -38,7 +38,7 @@ pipeline {
                                 def scannerHome = tool 'SonarQubeScanner'
                                 sh """
                                     ${scannerHome}/bin/sonar-scanner \
-                                        -Dsonar.projectKey=frontend-app \
+                                        -Dsonar.projectKey=chat-app-frontend \
                                         -Dsonar.sources=src \
                                         -Dsonar.host.url=$SONAR_HOST_URL \
                                         -Dsonar.login=$SONAR_TOKEN
