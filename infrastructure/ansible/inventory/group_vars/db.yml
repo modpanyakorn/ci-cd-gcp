@@ -1,0 +1,5 @@
+mongodb:
+  image: mongodb/mongodb-community-server
+  tag: 7.0-ubuntu2204
+  port: 3002
+  mongodb_exporter_port: 9103

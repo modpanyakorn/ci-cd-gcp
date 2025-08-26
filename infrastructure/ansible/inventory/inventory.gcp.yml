@@ -1,0 +1,25 @@
+plugin: google.cloud.gcp_compute
+projects:
+  -
+zones:
+  -
+auth_kind: serviceaccount
+service_account_file:
+
+# Group hosts ตาม label เพื่อใช้ ansible group_vars
+keyed_groups:
+  - key: labels
+
+# ใช้ hostname จาก instance name
+hostnames:
+  - name
+compose:
+  ansible_host: name
+  private_ip: networkInterfaces[0].networkIP
+
+groups:
+  nginx_proxy: "'nginx-dev' in name"
+  frontend: "'frontend-dev' in name"
+  backend: "'backend-dev' in name"
+  db: "'db-dev' in name"
+  devops: "'devops-dev' in name"

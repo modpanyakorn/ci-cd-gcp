@@ -1,0 +1,7 @@
+backend:
+  image: "{{ registry.url }}/{{ registry.namespace }}/ci-cd-chat-web-application-backend"
+  tag: "0.7-pm2-socket"
+  frontend_url: "http://{{ hostvars[groups['frontend'][0]].private_ip }}:{{ frontend.port }}"
+  env:
+    port: 3001
+    mongodb_url: "mongodb://{{ hostvars[groups['db'][0]].private_ip }}:{{ mongodb.port }}/chat"

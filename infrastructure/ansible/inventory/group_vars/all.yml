@@ -1,0 +1,30 @@
+# gcp meta
+ansible_user:
+project_id:
+zone:
+
+# docker registry
+registry:
+  url: docker.io
+  namespace:
+
+# docker compose dir
+compose_dir: "/home/{{ ansible_user }}/ci-cd-gcp"
+compose_restart: unless-stopped
+
+# exporters
+exporters:
+  node_exporter_port: 9100
+  cadvisor_port: 9102
+
+# ssh proxy args (iap tunnel)
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o ProxyCommand="gcloud compute start-iap-tunnel %h 22
+  --project={{ project_id }}
+  --zone={{ zone }}
+  --listen-on-stdin --quiet"
+
+# python interpreter
+ansible_python_interpreter: /usr/bin/python3

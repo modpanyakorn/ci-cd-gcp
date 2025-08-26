@@ -1,0 +1,4 @@
+nginx_proxy:
+  tag: "0.2-nginx-monitors"
+  port: 80
+  nginx_exporter_port: 9104
