@@ -67,7 +67,7 @@ export default function Login() {
         <form action="" onSubmit={(event) => handleSubmit(event)}>
           <div className="brand">
             <img src={Logo} alt="logo" />
-            <h1>snappy</h1>
+            <h1>snappy chat</h1>
           </div>
           <input
             type="text"
@@ -82,7 +82,7 @@ export default function Login() {
             name="password"
             onChange={(e) => handleChange(e)}
           />
-          <button type="submit">Log In SNAPPY CHAT</button>
+          <button type="submit">Log In</button>
           <span>
             Don't have an account ? <Link to="/register">Create One.</Link>
           </span>
