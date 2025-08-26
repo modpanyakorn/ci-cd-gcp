@@ -17,7 +17,6 @@ pipeline {
                   | jq -r '.' > sa.json
 
                 echo ">>> Preview SA.json"
-                head -n 10 sa.json
                 '''
                 stash includes: 'sa.json', name: 'sa-key'
             }
@@ -84,6 +83,7 @@ pipeline {
                           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                           docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT -f ./Dockerfile.cicd .
                           docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
+                          docker rmi $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
                           docker logout
                         """
                     }
