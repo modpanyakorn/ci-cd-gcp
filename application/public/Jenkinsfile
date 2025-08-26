@@ -1,0 +1,132 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = 'docker.io'
+        IMAGE    = 'ci-cd-gcp-chat-web-application-frontend'
+        COMMIT   = "${env.GIT_COMMIT[0..6]}"   // short commit SHA
+    }
+
+    stages {
+        stage('Fetch SA from Vault') {
+            steps {
+                sh '''
+                echo ">>> ดึง Service Account จาก Vault"
+                docker exec vault vault kv get -format=json ci-cd-gcp/dev/gcp-sa \
+                  | jq -r '.data.data.key' \
+                  | jq -r '.' > sa.json
+
+                echo ">>> Preview SA.json"
+                head -n 10 sa.json
+                '''
+                stash includes: 'sa.json', name: 'sa-key'
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            when {
+                changeset 'application/public/src/**'
+            }
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    withCredentials([string(credentialsId: 'sonar-token-frontend', variable: 'SONAR_TOKEN')]) {
+                        dir('application/public') {
+                            sh """
+                              sonar-scanner \
+                                -Dsonar.projectKey=frontend-app \
+                                -Dsonar.sources=src \
+                                -Dsonar.host.url=$SONAR_HOST_URL \
+                                -Dsonar.login=$SONAR_TOKEN
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            when {
+                changeset 'application/public/src/**'
+            }
+            steps {
+                dir('application/public') {
+                    sh '''
+                      npm ci
+                      npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            when {
+                changeset 'application/public/src/**'
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    dir('application/public') {
+                        sh """
+                          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT .
+                          docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
+                          docker logout
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            when {
+                changeset 'application/public/src/**'
+            }
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'ansible-user', variable: 'ANSIBLE_USER'),
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+                ]) {
+                    sh '''
+                      gcloud auth activate-service-account --key-file=sa.json
+                      gcloud config set project $PROJECT_ID
+                      gcloud config set compute/zone $ZONE
+
+                      export ANSIBLE_CONFIG=infrastructure/ansible/ansible.cicd.cfg
+                      ansible-playbook -i infrastructure/ansible/inventory/hosts.ini \
+                        infrastructure/ansible/playbooks/frontend-deploy.yml \
+                        --extra-vars "frontend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE ansible_user=$ANSIBLE_USER project_id=$PROJECT_ID zone=$ZONE"
+                    '''
+                }
+            }
+        }
+
+        // stage('Smoke Test') {
+        //     when {
+        //         changeset 'application/public/src/**'
+        //     }
+        //     steps {
+        //         sh 'curl -f http://nginx-dev:3000 || exit 1'
+        //     }
+        // }
+    }
+
+    post {
+        success {
+            echo "✅ Frontend deployed successfully: $REGISTRY/$IMAGE:$COMMIT"
+        }
+        failure {
+            echo '❌ Deployment failed!'
+        }
+        always {
+            sh 'rm -f sa.json || true'
+        }
+    }
+}
