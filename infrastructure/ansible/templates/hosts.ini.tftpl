@@ -1,17 +1,17 @@
 [nginx_proxy]
-nginx-dev ansible_ssh_common_args='-o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --project=${project} --zone=${zone} --listen-on-stdin --quiet"'
+nginx-dev ansible_host=${nginx_dev_private_ip}
 
 [frontend]
-frontend-dev ansible_ssh_common_args='-o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --project=${project} --zone=${zone} --listen-on-stdin --quiet"'
+frontend-dev ansible_host=${frontend_dev_private_ip}
 
 [backend]
-backend-dev ansible_ssh_common_args='-o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --project=${project} --zone=${zone} --listen-on-stdin --quiet"'
+backend-dev ansible_host=${backend_dev_private_ip}
 
 [db]
-db-dev ansible_ssh_common_args='-o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --project=${project} --zone=${zone} --listen-on-stdin --quiet"'
+db-dev ansible_host=${db_dev_private_ip}
 
 [devops]
-devops-dev ansible_ssh_common_args='-o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --project=${project} --zone=${zone} --listen-on-stdin --quiet"'
+devops-dev ansible_host=${devops_dev_private_ip}
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
