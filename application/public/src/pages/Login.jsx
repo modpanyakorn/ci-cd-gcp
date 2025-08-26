@@ -84,7 +84,7 @@ export default function Login() {
           />
           <button type="submit">Log In</button>
           <span>
-            Don't have some best friend let's{" "}
+            Don't have some beside friend? let's{" "}
             <Link to="/register">Create One.</Link>
           </span>
         </form>
