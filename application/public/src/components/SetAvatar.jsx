@@ -173,4 +173,45 @@ const Container = styled.div`
       background-color: #3c0edc;
     }
   }
+
+  @media (max-width: 720px) {
+    padding: 1.25rem;
+    gap: 2rem;
+
+    .title-container h1 {
+      font-size: 1.25rem;
+      text-align: center;
+      padding: 0 0.5rem;
+    }
+
+    .avatars {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      .avatar img {
+        height: 4.5rem;
+      }
+    }
+
+    .submit-btn {
+      width: 100%; /* ปุ่มเต็มแถวบนมือถือ */
+      padding: 0.9rem 1.25rem;
+      border-radius: 0.6rem;
+    }
+  }
+
+  @media (min-width: 721px) and (max-width: 1080px) {
+    .avatars {
+      gap: 1.5rem;
+    }
+    .avatars .avatar img {
+      height: 5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .avatars .avatar img {
+      height: 7rem;
+    }
+  }
 `;
