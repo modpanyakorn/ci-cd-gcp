@@ -7,20 +7,37 @@ const app = express();
 const socket = require("socket.io");
 require("dotenv").config();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL, // frontend vm listen
+  })
+);
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("DB Connetion Successfull");
-  })
-  .catch((err) => {
-    console.log(err.message);
-  });
+async function connectWithRetry() {
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // ลองรอ 5 วิ แล้วค่อย fail
+    });
+    console.log("DB Connection Successful");
+  } catch (err) {
+    console.error("MongoDB connection failed:", err.message);
+    const retrySeconds = 5;
+    console.log(`Retrying in ${retrySeconds} seconds...`);
+    setTimeout(connectWithRetry, retrySeconds * 1000);
+  }
+}
+
+// เริ่ม connect รอบแรก
+connectWithRetry();
+
+// ฟัง event เวลา connection หลุดกลางทาง
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected! Trying to reconnect...");
+  connectWithRetry();
+});
 
 app.get("/ping", (_req, res) => {
   return res.json({ msg: "Ping Successful" });
@@ -34,7 +51,7 @@ const server = app.listen(process.env.PORT, () =>
 );
 const io = socket(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
 });
@@ -42,6 +59,7 @@ const io = socket(server, {
 global.onlineUsers = new Map();
 io.on("connection", (socket) => {
   global.chatSocket = socket;
+
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
   });
@@ -49,7 +67,10 @@ io.on("connection", (socket) => {
   socket.on("send-msg", (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
     if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+      socket.to(sendUserSocket).emit("msg-recieve", {
+        from: data.from,
+        msg: data.msg,
+      });
     }
   });
 });

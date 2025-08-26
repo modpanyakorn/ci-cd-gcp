@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  backend:
+    image: panyakorn130547/ci-cd-chat-web-application-backend:0.7-pm2-socket
+    container_name: backend
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    networks:
+      backend_network:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - "--path.rootfs=/host"
+    # network_mode: host
+    ports:
+      - "9100:9100"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - "/:/host:ro,rslave"
+    networks:
+      backend_network:
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor-amd64:v0.51.0
+    container_name: cadvisor
+    ports:
+      - "9102:8080"
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    networks:
+      backend_network:
+
+networks:
+  backend_network:
+    driver: bridge
