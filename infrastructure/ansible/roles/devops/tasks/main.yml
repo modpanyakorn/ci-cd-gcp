@@ -1,54 +1,9 @@
-- name: Ensure devops directory exists
-  file:
-    path: /home/{{ ansible_user }}/ci-cd-gcp/devops
-    state: directory
+# roles/devops/tasks/main.yml
 
-- name: Ensure prometheus dir exists
-  file:
-    path: /home/{{ ansible_user }}/ci-cd-gcp/devops/prometheus
-    state: directory
+- name: Setup devops services (directories, docker-compose, vault, etc.)
+  ansible.builtin.include_tasks: setup-services.yml
+  tags: ["setup"]
 
-- name: Ensure grafana dir exists
-  file:
-    path: /home/{{ ansible_user }}/ci-cd-gcp/devops/grafana
-    state: directory
-
-- name: Load multiple variable files for templates render
-  ansible.builtin.include_vars:
-    file: "{{ item }}"
-  loop:
-    - ../../inventory/group_vars/db.yml
-    - ../../inventory/group_vars/nginx_proxy.yml
-    - ../../inventory/group_vars/frontend.yml
-  tags: ["load-vars"]
-
-- name: Render docker-compose.yml
-  template:
-    src: docker-compose.yml.j2
-    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/docker-compose.yml
-
-- name: Render prometheus.yml
-  template:
-    src: prometheus.yml.j2
-    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/prometheus/prometheus.yml
-
-- name: Copy grafana datasource
-  copy:
-    src: grafana/grafana-datasource.yml
-    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/grafana/grafana-datasource.yml
-
-- name: Copy Dockerfile.jenkins
-  copy:
-    src: jenkins/Dockerfile.jenkins
-    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/Dockerfile.jenkins
-
-# - name: Deploy devops stack
-#   command: docker compose up -d --build
-#   args:
-#     chdir: /home/{{ ansible_user }}/ci-cd-gcp/devops
-
-- name: Deploy docker-compose.yml # use thist instead
-  community.docker.docker_compose_v2:
-    project_src: /home/{{ ansible_user }}/ci-cd-gcp/devops
-    build: "always"
-    state: present
+- name: Push secrets into Vault
+  ansible.builtin.include_tasks: local-push-secert-to-vault.yml
+  tags: ["vault", "secrets"]

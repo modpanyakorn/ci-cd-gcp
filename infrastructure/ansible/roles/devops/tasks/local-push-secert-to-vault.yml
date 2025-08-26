@@ -1,0 +1,81 @@
+- name: Load devops variables from root
+  ansible.builtin.include_vars:
+    file: ../../../inventory/group_vars/devops.yml
+  tags: ["load-vars"]
+
+# - name: Ensure vault is running fresh
+#   community.docker.docker_container:
+#     name: vault
+#     image: hashicorp/vault:1.20.2
+#     state: started
+#     recreate: true
+#     env_file:
+#       - /home/{{ ansible_user }}/ci-cd-gcp/devops/.env
+
+- name: Ensure vault is running
+  community.docker.docker_container:
+    name: vault
+    state: started
+
+# - name: Load vault env
+#   ansible.builtin.include_vars:
+#     file: /home/{{ ansible_user }}/ci-cd-gcp/devops/.env
+#     name: vault_env
+
+- name: Enable KV-V2 secrets engine inside vault container
+  ansible.builtin.shell: |
+    docker exec vault vault secrets enable -path={{ vault.mount_path }} -version=2 kv
+  register: enable_kv
+  failed_when: enable_kv.rc not in [0,2] # rc=2 = already enabled
+  ignore_errors: true
+
+- name: Copy SA file from controller to remote host
+  ansible.builtin.copy:
+    src: "../../../../sa.json"
+    dest: "/tmp/sa.json"
+    mode: "0600"
+
+- name: Copy SA file into vault container
+  ansible.builtin.shell: |
+    docker cp /tmp/sa.json vault:/tmp/sa.json
+
+- name: Push to Vault using vault kv put with @file
+  ansible.builtin.shell: |
+    docker exec vault vault kv put {{ vault.mount_path }}/dev/gcp-sa key=@/tmp/sa.json
+
+- name: Clean up temp file in container
+  ansible.builtin.shell: |
+    docker exec vault rm -f /tmp/sa.json
+
+- name: Clean up temp file on host
+  ansible.builtin.file:
+    path: /tmp/sa.json
+    state: absent
+
+- name: Load OAuth JSON
+  ansible.builtin.set_fact:
+    oauth_creds: "{{ lookup('file','../../../../oauth.json') | from_json }}"
+
+- name: Push OAuth2 Client Secret to Vault (kv put)
+  ansible.builtin.shell: |
+    docker exec vault vault kv put {{ vault.mount_path }}/dev/iap-creds \
+        client_id="{{ oauth_creds.web.client_id }}" \
+        client_secret="{{ oauth_creds.web.client_secret }}"
+
+- name: Read back GCP Service Account secret
+  ansible.builtin.shell: |
+    docker exec vault vault kv get -format=json {{ vault.mount_path }}/dev/gcp-sa
+  register: gcp_sa_secret
+
+- name: Show GCP SA Secret
+  ansible.builtin.debug:
+    var: gcp_sa_secret.stdout
+
+- name: Read back OAuth2 Client Secret
+  ansible.builtin.shell: |
+    docker exec vault vault kv get -format=json {{ vault.mount_path }}/dev/iap-creds
+  register: oauth_secret
+
+- name: Show OAuth2 Secret
+  ansible.builtin.debug:
+    var: oauth_secret.stdout

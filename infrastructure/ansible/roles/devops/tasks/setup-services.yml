@@ -1,0 +1,128 @@
+- name: Install hvac Python library via apt
+  ansible.builtin.apt:
+    name: python3-hvac # Use the correct package name for your OS
+    state: present
+  tags: ["prepare"]
+
+- name: Ensure devops directory exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/devops
+    state: directory
+
+# - name: Ensure vault dir exists
+#   file:
+#     path: /home/{{ ansible_user }}/ci-cd-gcp/devops/vault
+#     state: directory
+
+- name: Ensure prometheus dir exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/devops/prometheus
+    state: directory
+
+- name: Ensure grafana dir exists
+  file:
+    path: /home/{{ ansible_user }}/ci-cd-gcp/devops/grafana
+    state: directory
+
+- name: Load multiple variable files for templates render
+  ansible.builtin.include_vars:
+    file: "{{ item }}"
+  loop:
+    - ../../inventory/group_vars/db.yml
+    - ../../inventory/group_vars/nginx_proxy.yml
+    - ../../inventory/group_vars/frontend.yml
+  tags: ["load-vars"]
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/docker-compose.yml
+
+- name: Render prometheus.yml
+  template:
+    src: prometheus.yml.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/prometheus/prometheus.yml
+
+- name: Render .env
+  template:
+    src: .env.j2
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/.env
+
+# - name: Copy vault.hcl
+#   copy:
+#     src: vault/vault.hcl
+#     dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/vault/vault.hcl
+
+- name: Copy grafana datasource
+  copy:
+    src: grafana/grafana-datasource.yml
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/grafana/grafana-datasource.yml
+
+- name: Copy Dockerfile.jenkins
+  copy:
+    src: jenkins/Dockerfile.jenkins
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/Dockerfile.jenkins
+
+- name: Copy requirements.txt for Ansible dependencies
+  copy:
+    src: jenkins/requirements.txt
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/requirements.txt
+
+- name: Copy requirements.yml for Ansible Galaxy dependencies
+  copy:
+    src: jenkins/requirements.yml
+    dest: /home/{{ ansible_user }}/ci-cd-gcp/devops/requirements.yml
+
+- name: Deploy docker-compose.yml
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ ansible_user }}/ci-cd-gcp/devops
+    build: "always"
+    state: present
+    # remove_orphans: true
+# - name: Ensure vault is running
+#   community.docker.docker_container:
+#     name: vault
+#     state: started
+
+# - name: Wait for Vault API
+#   ansible.builtin.wait_for:
+#     host: 127.0.0.1
+#     port: "{{ vault.port }}"
+#     delay: 5
+#     timeout: 60
+
+# - name: Check if Vault already initialized
+#   ansible.builtin.command: docker exec vault vault status -format=json
+#   register: vault_status
+#   changed_when: false
+#   failed_when: false
+
+# - name: Init Vault (only if not initialized)
+#   ansible.builtin.command: >
+#     docker exec vault vault operator init -key-shares=1 -key-threshold=1 -format=json
+#   register: vault_init
+#   when: not (vault_status.stdout | from_json).initialized
+#   changed_when: true
+
+# - name: Save unseal keys and root token to local file (only first time)
+#   delegate_to: localhost
+#   copy:
+#     content: "{{ vault_init.stdout }}"
+#     dest: "{{ playbook_dir }}/../files/vault/sealkey.json"
+#   when: vault_init is defined
+
+# - name: Parse init output
+#   set_fact:
+#     vault_unseal_key: "{{ (vault_init.stdout | from_json).unseal_keys_b64[0] }}"
+#     vault_root_token: "{{ (vault_init.stdout | from_json).root_token }}"
+#   when: vault_init is defined
+
+# - name: Unseal Vault
+#   ansible.builtin.command: docker exec vault vault operator unseal {{ vault_unseal_key }}
+#   changed_when: false
+#   when: vault_unseal_key is defined
+
+# - name: Login with root token (only first time)
+#   ansible.builtin.command: docker exec -e VAULT_TOKEN={{ vault_root_token }} vault vault login {{ vault_root_token }}
+#   changed_when: false
+#   when: vault_root_token is defined
