@@ -82,7 +82,7 @@ pipeline {
                     dir('application/public') {
                         sh """
                           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT .
+                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT ./Dockerfile.cicd
                           docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
                           docker logout
                         """
@@ -92,6 +92,11 @@ pipeline {
         }
 
         stage('Deploy with Ansible') {
+            agent {
+                docker {
+                    image 'google/cloud-sdk:536.0.0-slim'
+                }
+            }
             when {
                 changeset 'application/public/src/**'
             }
