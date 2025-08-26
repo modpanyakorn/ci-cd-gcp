@@ -64,7 +64,7 @@ pipeline {
                 dir('application/public') {
                     sh '''
                       npm ci
-                      npm run build
+                      CI=fales npm run build
                     '''
                 }
             }
@@ -72,7 +72,7 @@ pipeline {
 
         stage('Build & Push Docker Image') {
             when {
-                changeset 'application/public/src/**'
+                changeset 'application/public/src/**' || changeset 'application/public/public/**'
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
