@@ -1,0 +1,15 @@
+collections:
+  - name: community.docker
+    version: "4.7.0"
+
+  - name: community.general
+    version: "11.2.1"
+
+  - name: ansible.posix
+    version: "2.1.0"
+
+  - name: google.cloud
+    version: "1.7.0"
+
+  - name: community.hashi_vault
+    version: "7.0.0"
