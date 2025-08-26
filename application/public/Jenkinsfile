@@ -82,7 +82,7 @@ pipeline {
                     dir('application/public') {
                         sh """
                           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT ./Dockerfile.cicd
+                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT -f ./Dockerfile.cicd
                           docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
                           docker logout
                         """
