@@ -14,13 +14,13 @@ output "vm_ips" {
 # mapping key
 locals {
   value = templatefile("../../ansible/templates/hosts.ini.tftpl", {
-    project          = var.project_id
-    zone             = var.zone
-    nginx_proxy_name = module.nginx_vm.instance_name
-    frontend_name    = module.frontend_vm.instance_name
-    backend_name     = module.backend_vm.instance_name
-    db_name          = module.db_vm.instance_name
-    devops_name      = module.devops_vm.instance_name
+    project                 = var.project_id
+    zone                    = var.zone
+    nginx_dev_private_ip    = module.nginx_vm.internal_ip
+    frontend_dev_private_ip = module.frontend_vm.internal_ip
+    backend_dev_private_ip  = module.backend_vm.internal_ip
+    db_dev_private_ip       = module.db_vm.internal_ip
+    devops_dev_private_ip   = module.devops_vm.internal_ip
   })
 }
 
