@@ -30,20 +30,20 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            when {
-                changeset 'application/public/src/**'
-            }
             steps {
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonar-token-frontend', variable: 'SONAR_TOKEN')]) {
                         dir('application/public') {
-                            sh """
-                              sonar-scanner \
-                                -Dsonar.projectKey=frontend-app \
-                                -Dsonar.sources=src \
-                                -Dsonar.host.url=$SONAR_HOST_URL \
-                                -Dsonar.login=$SONAR_TOKEN
-                            """
+                            script {
+                                def scannerHome = tool 'SonarQubeScanner'
+                                sh """
+                                    ${scannerHome}/bin/sonar-scanner \
+                                        -Dsonar.projectKey=frontend-app \
+                                        -Dsonar.sources=src \
+                                        -Dsonar.host.url=$SONAR_HOST_URL \
+                                        -Dsonar.login=$SONAR_TOKEN
+                                   """
+                            }
                         }
                     }
                 }
@@ -108,14 +108,14 @@ pipeline {
             }
         }
 
-        // stage('Smoke Test') {
-        //     when {
-        //         changeset 'application/public/src/**'
-        //     }
-        //     steps {
-        //         sh 'curl -f http://nginx-dev:3000 || exit 1'
-        //     }
-        // }
+    // stage('Smoke Test') {
+    //     when {
+    //         changeset 'application/public/src/**'
+    //     }
+    //     steps {
+    //         sh 'curl -f http://nginx-dev:3000 || exit 1'
+    //     }
+    // }
     }
 
     post {
