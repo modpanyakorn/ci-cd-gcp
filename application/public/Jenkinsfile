@@ -64,14 +64,19 @@ pipeline {
                 dir('application/public') {
                     sh '''
                       npm ci
-                      CI=fales npm run build
+                      CI=false npm run build
                     '''
                 }
             }
         }
 
         stage('Build & Push Docker Image') {
-            when { changeset 'application/public/src/**' || changeset 'application/public/public/**' }
+            when {
+                anyOf {
+                    changeset pattern: 'application/public/src/**', comparator: 'ANT'
+                    changeset pattern: 'application/public/public/**', comparator: 'ANT'
+                }
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     dir('application/public') {
