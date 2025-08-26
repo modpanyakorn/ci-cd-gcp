@@ -1,6 +1,6 @@
 frontend:
   image: "{{ registry.url }}/{{ registry.namespace }}/ci-cd-gcp-chat-web-application-frontend"
-  tag: "0.8-unmount"
+  tag: "{{ frontend_tag }}"
   port: 3000
   nginx_exporter_port: 9104
   env:
