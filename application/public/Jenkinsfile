@@ -54,18 +54,18 @@ pipeline {
             agent {
                 docker {
                     image 'node:24.5.0-alpine3.22'
-                    args  '-u root:root'  // run as root to avoid permission issues
+                    args  '-u root:root -v $HOME/.npm:/root/.npm -v $WORKSPACE/application/public/node_modules:/var/jenkins_home/workspace/node_modules'
                 }
             }
             when {
-                changeset 'application/public/src/**'
+                changeset pattern: 'application/public/src/**', comparator: 'ANT'
             }
             steps {
                 dir('application/public') {
                     sh '''
-                      npm ci
-                      CI=false npm run build
-                    '''
+              npm install --prefer-offline --no-audit --progress=false
+              CI=false npm run build
+            '''
                 }
             }
         }
@@ -82,7 +82,7 @@ pipeline {
                     dir('application/public') {
                         sh """
                           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT -f ./Dockerfile.cicd
+                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT -f ./Dockerfile.cicd .
                           docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
                           docker logout
                         """
