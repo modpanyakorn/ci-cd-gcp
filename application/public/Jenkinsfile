@@ -51,6 +51,12 @@ pipeline {
         }
 
         stage('Build Frontend') {
+            agent {
+                docker {
+                    image 'node:24.5.0-alpine3.22'
+                    args  '-u root:root'  // run as root to avoid permission issues
+                }
+            }
             when {
                 changeset 'application/public/src/**'
             }
