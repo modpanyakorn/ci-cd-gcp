@@ -1,12 +1,7 @@
-# gcp meta
-ansible_user:
-project_id:
-zone:
-
 # docker registry
 registry:
   url: docker.io
-  namespace:
+  namespace: "{{ registry_namespace }}"
 
 # docker compose dir
 compose_dir: "/home/{{ ansible_user }}/ci-cd-gcp"
