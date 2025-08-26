@@ -1,0 +1,5 @@
+- name: Deploy db
+  hosts: db
+  become: yes
+  roles:
+    - db

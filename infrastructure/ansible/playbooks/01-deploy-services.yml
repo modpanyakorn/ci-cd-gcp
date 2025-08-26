@@ -1,0 +1,29 @@
+- name: Deploy db
+  hosts: db
+  become: yes
+  roles:
+    - db
+
+- name: Deploy backend
+  hosts: backend
+  become: yes
+  roles:
+    - backend
+
+- name: Deploy frontend
+  hosts: frontend
+  become: yes
+  roles:
+    - frontend
+
+- name: Deploy nginx proxy
+  hosts: nginx_proxy
+  become: yes
+  roles:
+    - nginx_proxy
+
+- name: Deploy devops stack
+  hosts: devops
+  become: yes
+  roles:
+    - devops

@@ -1,0 +1,5 @@
+- name: Deploy devops stack and push secrets to Vault
+  hosts: devops
+  become: yes
+  roles:
+    - devops

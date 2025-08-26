@@ -1,0 +1,5 @@
+- name: Deploy nginx proxy
+  hosts: nginx_proxy
+  become: yes
+  roles:
+    - nginx_proxy

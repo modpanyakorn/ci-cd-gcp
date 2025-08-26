@@ -1,0 +1,65 @@
+---
+- name: Sanity check all hosts before real deployment
+  hosts: all
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Check Python interpreter exists
+      raw: "which python3 || which python"
+      register: python_check
+      changed_when: false
+      failed_when: python_check.rc != 0
+
+    - name: Show Python path
+      debug:
+        var: python_check.stdout_lines
+
+    - name: Check sudo availability
+      raw: "sudo -n true"
+      register: sudo_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Report sudo status
+      debug:
+        msg: >
+          {%- if sudo_check.rc == 0 -%}
+          ✅ Passwordless sudo is available
+          {%- else -%}
+          ⚠️ No passwordless sudo (become may fail)
+          {%- endif -%}
+
+    - name: Detect package manager (apt / yum / dnf)
+      raw: "command -v apt || command -v yum || command -v dnf"
+      register: pkg_mgr
+      changed_when: false
+      failed_when: pkg_mgr.rc != 0
+
+    - name: Show package manager
+      debug:
+        var: pkg_mgr.stdout
+
+    - name: Check available disk space
+      command: df -h /
+      register: disk
+      changed_when: false
+
+    - name: Show disk usage
+      debug:
+        var: disk.stdout_lines
+
+    - name: Check if systemd exists (for service management)
+      raw: "command -v systemctl"
+      register: systemd_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Report systemd
+      debug:
+        msg: >
+          {%- if systemd_check.rc == 0 -%}
+          ✅ systemd available
+          {%- else -%}
+          ⚠️ systemd not found (handlers using service may fail)
+          {%- endif -%}
