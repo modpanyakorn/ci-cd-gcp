@@ -82,7 +82,7 @@ export default function Login() {
             name="password"
             onChange={(e) => handleChange(e)}
           />
-          <button type="submit">Log In</button>
+          <button type="submit">Log In SNAPPY CHAT</button>
           <span>
             Don't have an account ? <Link to="/register">Create One.</Link>
           </span>
