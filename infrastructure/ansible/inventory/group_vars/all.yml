@@ -1,5 +1,5 @@
 # gcp meta
-ansible_user: "{{ gcp_ansible_user | default(ansible_user) }}"
+ansible_user: "{{ gcp_ansible_user | default('') }}"
 project_id: "{{ gcp_project_id }}"
 zone: "{{ gcp_zone }}"
 
