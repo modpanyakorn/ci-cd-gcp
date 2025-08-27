@@ -8,12 +8,12 @@
     src: .env.j2
     dest: /home/{{ ansible_user }}/ci-cd-gcp/frontend/.env
 
-- name: Load multiple variable files for templates render
-  ansible.builtin.include_vars:
-    file: "{{ item }}"
-  loop:
-    - ../../inventory/group_vars/backend.yml
-  tags: ["load-vars"]
+# - name: Load multiple variable files for templates render
+#   ansible.builtin.include_vars:
+#     file: "{{ item }}"
+#   loop:
+#     - ../../inventory/group_vars/backend.yml
+#   tags: ["load-vars"]
 
 - name: Render nginx.conf
   template:
