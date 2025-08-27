@@ -44,6 +44,7 @@ app.get("/ping", (_req, res) => {
     msg: "Ping Successful",
     status: "success",
     timestamp: Date.now(),
+    version: "1.0.0",
   });
 });
 
