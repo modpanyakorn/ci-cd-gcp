@@ -13,6 +13,7 @@ hostnames:
   - name
 compose:
   ansible_host: name
+  private_ip: networkInterfaces[0].networkIP
 
 groups:
   nginx_proxy: "'nginx-dev' in name"
