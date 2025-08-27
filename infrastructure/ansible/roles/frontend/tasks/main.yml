@@ -13,6 +13,7 @@
     file: "{{ item }}"
   loop:
     - ../../inventory/group_vars/backend.yml
+    - ../../inventory/group_vars/db.yml
   tags: ["load-vars"]
 
 - name: Render nginx.conf
