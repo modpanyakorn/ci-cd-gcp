@@ -92,11 +92,6 @@ pipeline {
         }
 
         stage('Deploy with Ansible') {
-            agent {
-                docker {
-                    image 'google/cloud-sdk:536.0.0-slim'
-                }
-            }
             when {
                 changeset 'application/public/src/**'
             }
