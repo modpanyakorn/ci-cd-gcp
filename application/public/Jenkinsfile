@@ -98,24 +98,34 @@ pipeline {
             steps {
                 unstash 'sa-key'
                 withCredentials([
-                    string(credentialsId: 'ansible-user', variable: 'ANSIBLE_USER'),
-                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
-                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
-                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
-                ]) {
+            string(credentialsId: 'ansible-user', variable: 'ANSIBLE_USER'),
+            string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+            string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+            string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+        ]) {
                     sh '''
-                      gcloud auth activate-service-account --key-file=sa.json
-                      gcloud config set project $PROJECT_ID
-                      gcloud config set compute/zone $ZONE
+                        # auth gcloud
+                        gcloud auth activate-service-account --key-file=sa.json
+                        gcloud config set project $PROJECT_ID
+                        gcloud config set compute/zone $ZONE
 
-                      cd infrastructure/ansible
-                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
-                      ansible --version
-                      ansible-playbook -i ./inventory/hosts.ini \
-                        ./playbooks/frontend-deploy.yml \
-                        --extra-vars "frontend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE ansible_user=$ANSIBLE_USER project_id=$PROJECT_ID zone=$ZONE"
+                        # ไปที่ ansible directory
+                        cd infrastructure/ansible
+
+                        # ใช้ config CICD
+                        export ANSIBLE_CONFIG=./ansible.cicd.cfg
+
+                        # debug ดูว่า ansible_user ถูก inject แล้วจริง
+                        echo ">>> Using ANSIBLE_USER=$ANSIBLE_USER"
+                        echo ">>> Preview inventory"
+                        cat ./inventory/hosts.ini
+
+                        # run playbook
+                        ansible-playbook -i ./inventory/hosts.ini \
+                            ./playbooks/frontend-deploy.yml \
+                            --extra-vars "frontend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE project_id=$PROJECT_ID zone=$ZONE"
                     '''
-                }
+        }
             }
         }
 
