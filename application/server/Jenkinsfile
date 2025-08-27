@@ -16,11 +16,6 @@ pipeline {
         }
 
         stage('Fetch SA from Vault') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 sh '''
                   echo ">>> ดึง Service Account จาก Vault"
@@ -36,11 +31,6 @@ pipeline {
         }
 
         stage('Render inventory') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 unstash 'sa-key'
                 withCredentials([
@@ -64,11 +54,6 @@ pipeline {
         }
 
         stage('Generate SSH keypair') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 sh '''
                   echo ">>> Generate Jenkins CI keypair"
@@ -84,11 +69,6 @@ pipeline {
         }
 
         stage('Push Jenkins key to VM') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 unstash 'sa-key'
                 withCredentials([
@@ -112,11 +92,6 @@ pipeline {
         }
 
         stage('Test Ansible Ping') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 unstash 'sa-key'
                 withCredentials([
@@ -143,11 +118,6 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             steps {
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonar-qube-token', variable: 'SONAR_TOKEN')]) {
@@ -169,11 +139,6 @@ pipeline {
         }
 
         stage('Build Backend') {
-            when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
-            }
             agent {
                 docker {
                     image 'node:24.5.0-alpine3.22'
@@ -215,9 +180,7 @@ pipeline {
 
         stage('Deploy with Ansible') {
             when {
-                anyOf {
-                    changeset pattern: 'application/server/**', comparator: 'ANT'
-                }
+                changeset 'application/server/**'
             }
             steps {
                 unstash 'sa-key'
