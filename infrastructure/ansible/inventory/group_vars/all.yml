@@ -21,7 +21,7 @@ exporters:
 ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
-  -o ProxyCommand="gcloud compute start-iap-tunnel %h:22
+  -o ProxyCommand="gcloud compute start-iap-tunnel %h 22
   --project {{ project_id }}
   --zone {{ zone }}
   --listen-on-stdin --quiet"
