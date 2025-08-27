@@ -1,7 +1,9 @@
+# gcp meta
+
 # docker registry
 registry:
   url: docker.io
-  namespace: "{{ registry_namespace }}"
+  namespace: panyakorn130547
 
 # docker compose dir
 compose_dir: "/home/{{ ansible_user }}/ci-cd-gcp"
@@ -17,8 +19,8 @@ ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
   -o ProxyCommand="gcloud compute start-iap-tunnel %h 22
-  --project={{ project_id }}
-  --zone={{ zone }}
+  --project {{ project_id }}
+  --zone {{ zone }}
   --listen-on-stdin --quiet"
 
 # python interpreter
