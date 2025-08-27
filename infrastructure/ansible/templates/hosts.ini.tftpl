@@ -1,17 +1,17 @@
 [nginx_proxy]
-nginx-dev ansible_host=${nginx_dev_private_ip}
+${nginx_vm_name} ansible_host=${nginx_vm_name} ansible_user=$${ANSIBLE_USER}
 
 [frontend]
-frontend-dev ansible_host=${frontend_dev_private_ip}
+${frontend_vm_name} ansible_host=${frontend_vm_name} ansible_user=$${ANSIBLE_USER}
 
 [backend]
-backend-dev ansible_host=${backend_dev_private_ip}
+${backend_vm_name} ansible_host=${backend_vm_name} ansible_user=$${ANSIBLE_USER}
 
 [db]
-db-dev ansible_host=${db_dev_private_ip}
+${db_vm_name} ansible_host=${db_vm_name} ansible_user=$${ANSIBLE_USER}
 
 [devops]
-devops-dev ansible_host=${devops_dev_private_ip}
+${devops_vm_name} ansible_host=${devops_vm_name} ansible_user=$${ANSIBLE_USER}
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
