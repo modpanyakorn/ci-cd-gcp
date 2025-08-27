@@ -1,6 +1,6 @@
 backend:
-  image: "{{ registry.url }}/{{ registry.namespace }}/ci-cd-chat-web-application-backend"
-  tag: "{{ backend_tag | default('lastest')}}"
+  image: "{{ registry.url }}/{{ registry.namespace }}/ci-cd-gcp-chat-web-application-backend"
+  tag: "{{ backend_tag | default('latest')}}"
   frontend_url: "http://{{ hostvars[groups['frontend'][0]].private_ip }}:{{ frontend.port }}"
   env:
     port: 3001
