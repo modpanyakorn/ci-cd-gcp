@@ -142,6 +142,23 @@ resource "google_compute_backend_service" "devops_backend_iap" {
   }
 }
 
+# Backend Service Jenkins Webhook (no IAP)
+resource "google_compute_backend_service" "jenkins_webhook" {
+  name                  = "jenkins-webhook-backend"
+  protocol              = "HTTP"
+  port_name             = "jenkins-http"
+  timeout_sec           = 120
+  enable_cdn            = false
+  load_balancing_scheme = "EXTERNAL"
+  health_checks         = [google_compute_health_check.jenkins_health_check.self_link]
+
+  backend {
+    group = google_compute_instance_group.devops_instance_group_lb.self_link
+  }
+  # no iap for webhook
+}
+
+
 # Memeber access Service via HTTP (Grant iap.httpsResourceAccessor)
 resource "google_iap_web_backend_service_iam_member" "iap_access" {
   for_each = {
@@ -193,6 +210,11 @@ resource "google_compute_url_map" "devops_url_map" {
   path_matcher {
     name            = "jenkins-path-matcher"
     default_service = google_compute_backend_service.devops_backend_iap["jenkins"].self_link
+
+    path_rule {
+      paths   = ["/github-webhook/*"]
+      service = google_compute_backend_service.jenkins_webhook.self_link
+    }
   }
 
   # Grafana host rule
