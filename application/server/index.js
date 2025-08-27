@@ -44,7 +44,13 @@ app.get("/ping", (_req, res) => {
 });
 
 app.get("/health", (_req, res) => {
-  return res.json({ status: 200, msg: "OK", timestamp: Date.now() });
+  return res.json({
+    status: 200,
+    msg: "OK",
+    timestamp: Date.now(),
+    service: "backend",
+    version: "1.0.0",
+  });
 });
 
 app.use("/api/auth", authRoutes);
