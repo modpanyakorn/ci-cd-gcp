@@ -4,27 +4,116 @@ pipeline {
     environment {
         REGISTRY = 'docker.io'
         IMAGE    = 'ci-cd-gcp-chat-web-application-frontend'
-        COMMIT   = "${env.GIT_COMMIT[0..6]}"   // short commit SHA
+        COMMIT   = "${env.GIT_COMMIT[0..6]}"
     }
 
     stages {
+        stage('Clone Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/modpanyakorn/ci-cd-gcp.git'
+                sh 'ls -la'
+            }
+        }
+
         stage('Fetch SA from Vault') {
             steps {
                 sh '''
-                echo ">>> ดึง Service Account จาก Vault"
-                docker exec vault vault kv get -format=json ci-cd-gcp/dev/gcp-sa \
-                  | jq -r '.data.data.key' \
-                  | jq -r '.' > sa.json
+                  echo ">>> ดึง Service Account จาก Vault"
+                  docker exec vault vault kv get -format=json ci-cd-gcp/dev/gcp-sa \
+                    | jq -r '.data.data.key' \
+                    | jq -r '.' > sa.json
 
-                echo ">>> Preview SA.json"
+                  echo ">>> Preview SA.json"
+                  head -n 5 sa.json
                 '''
                 stash includes: 'sa.json', name: 'sa-key'
             }
         }
 
-        stage('Checkout') {
+        stage('Render inventory') {
             steps {
-                checkout scm
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE')
+                ]) {
+                    sh '''
+                      echo ">>> Render inventory.gcp.yml"
+                      cd infrastructure/ansible/inventory
+
+                      sed "s|{{ gcp_project_id }}|$PROJECT_ID|g;
+                           s|{{ gcp_zone }}|$ZONE|g;
+                           s|{{ service_account_file }}|$WORKSPACE/sa.json|g" \
+                           ../templates/inventory.gcp.yml.j2 > inventory.gcp.yml
+
+                      echo ">>> Preview inventory.gcp.yml"
+                      cat inventory.gcp.yml
+                    '''
+                }
+            }
+        }
+
+        stage('Generate SSH keypair') {
+            steps {
+                sh '''
+                  echo ">>> Generate Jenkins CI keypair"
+                  mkdir -p infrastructure/ansible/inventory
+                  if [ ! -f infrastructure/ansible/inventory/jenkins-gcp-key ]; then
+                    ssh-keygen -t ed25519 -f infrastructure/ansible/inventory/jenkins-gcp-key -C "jenkins-ci" -N ""
+                    chmod 600 infrastructure/ansible/inventory/jenkins-gcp-key
+                  else
+                    echo ">>> Keypair already exists, skip generating"
+                  fi
+                '''
+            }
+        }
+
+        stage('Push Jenkins key to VM') {
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE')
+                ]) {
+                    sh '''
+                      echo ">>> gcloud auth"
+                      gcloud auth activate-service-account --key-file=sa.json
+                      gcloud config set project $PROJECT_ID
+                      gcloud config set compute/zone $ZONE
+
+                      cd infrastructure/ansible
+                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
+
+                      echo ">>> Push Jenkins CI public key"
+                      ansible-playbook -i ./inventory roles/devops/tasks/push-jenkins-key.yml
+                    '''
+                }
+            }
+        }
+
+        stage('Test Ansible Ping') {
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+                ]) {
+                    sh '''
+                      echo ">>> gcloud auth"
+                      gcloud auth activate-service-account --key-file=sa.json
+                      gcloud config set project $PROJECT_ID
+                      gcloud config set compute/zone $ZONE
+
+                      cd infrastructure/ansible
+                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
+                      ansible-inventory -i ./inventory --graph
+
+                      echo ">>> Run ansible ping"
+                      ansible all -m ping -i ./inventory \
+                        --extra-vars "gcp_project_id=$PROJECT_ID gcp_zone=$ZONE docker_image_name=$REGISTRY_NAMESPACE"
+                    '''
+                }
             }
         }
 
@@ -41,7 +130,7 @@ pipeline {
                                         -Dsonar.sources=src \
                                         -Dsonar.host.url=$SONAR_HOST_URL \
                                         -Dsonar.login=$SONAR_TOKEN
-                                   """
+                                """
                             }
                         }
                     }
@@ -62,9 +151,9 @@ pipeline {
             steps {
                 dir('application/public') {
                     sh '''
-              npm install --prefer-offline --no-audit --progress=false
-              CI=false npm run build
-            '''
+                      npm install --prefer-offline --no-audit --progress=false
+                      CI=false npm run build
+                    '''
                 }
             }
         }
@@ -98,53 +187,34 @@ pipeline {
             steps {
                 unstash 'sa-key'
                 withCredentials([
-            string(credentialsId: 'ansible-user', variable: 'ANSIBLE_USER'),
-            string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
-            string(credentialsId: 'gcp-zone', variable: 'ZONE'),
-            string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
-        ]) {
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+                ]) {
                     sh '''
-                        # auth gcloud
                         gcloud auth activate-service-account --key-file=sa.json
                         gcloud config set project $PROJECT_ID
                         gcloud config set compute/zone $ZONE
 
-                        # ไปที่ ansible directory
                         cd infrastructure/ansible
-
-                        # ใช้ config CICD
                         export ANSIBLE_CONFIG=./ansible.cicd.cfg
 
-                        # debug ดูว่า ansible_user ถูก inject แล้วจริง
-                        echo ">>> Using ANSIBLE_USER=$ANSIBLE_USER"
-                        echo ">>> Preview inventory"
-                        cat ./inventory/hosts.ini
-
-                        # run playbook
-                        ansible-playbook -i ./inventory/hosts.ini \
+                        echo ">>> Deploy frontend"
+                        ansible-playbook -i ./inventory \
                             ./playbooks/frontend-deploy.yml \
                             --extra-vars "frontend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE project_id=$PROJECT_ID zone=$ZONE"
                     '''
-        }
+                }
             }
         }
-
-    // stage('Smoke Test') {
-    //     when {
-    //         changeset 'application/public/src/**'
-    //     }
-    //     steps {
-    //         sh 'curl -f http://nginx-dev:3000 || exit 1'
-    //     }
-    // }
     }
 
     post {
         success {
-            echo "✅ Frontend deployed successfully: $REGISTRY/$IMAGE:$COMMIT"
+            echo '✅ Frontend pipeline success'
         }
         failure {
-            echo '❌ Deployment failed!'
+            echo '❌ Frontend pipeline failed!'
         }
         always {
             sh 'rm -f sa.json || true'
