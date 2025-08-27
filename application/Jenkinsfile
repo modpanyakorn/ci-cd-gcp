@@ -1,45 +1,22 @@
 pipeline {
     agent any
-
-    stages {
-        stage('Clone Repo') {
-            steps {
-                git branch: 'main', url: 'https://github.com/modpanyakorn/ci-cd-gcp.git'
-            }
-        }
-
+    stage {
         stage('Decide and Trigger Pipelines') {
-            parallel {
-                stage('Backend Trigger') {
-                    when {
-                        changeset pattern: 'application/server/**', comparator: 'ANT'
-                    }
-                    steps {
-                        script {
-                            echo '>>> Changes detected in backend → Trigger backend pipeline'
-                            build job: 'ci-cd-gcp-backend', wait: false
-                        }
-                    }
-                }
+            steps {
+                script {
+                    def changedFiles = sh(
+                        script: 'git diff --name-only HEAD~1 HEAD',
+                        returnStdout: true
+                    ).trim().split('\n')
 
-                stage('Frontend Trigger') {
-                    when {
-                        changeset pattern: 'application/public/**', comparator: 'ANT'
-                    }
-                    steps {
-                        script {
-                            echo '>>> Changes detected in frontend → Trigger frontend pipeline'
-                            build job: 'ci-cd-gcp-frontend', wait: false
-                        }
-                    }
+                    if (changedFiles.any { it.startsWith('application/server/') }) {
+                        build job: 'ci-cd-gcp-backend', wait: false
                 }
+                    if (changedFiles.any { it.startsWith('application/public/') }) {
+                        build job: 'ci-cd-gcp-frontend', wait: false
             }
         }
     }
-
-    post {
-        success {
-            echo '✅ Dispatcher finished (triggered required pipelines)'
-        }
+}
     }
 }
