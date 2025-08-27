@@ -1,12 +1,11 @@
 # gcp meta
-ansible_user: "{{ gcp_ansible_user | default('sa_110818079319396337681') }}"
-project_id: "{{ gcp_project_id | default('adept-bridge-466219-v7') }}"
-zone: "{{ gcp_zone | default('asia-southeast1-a') }}"
+project_id: "{{ gcp_project_id }}"
+zone: "{{ gcp_zone }}"
 
 # docker registry
 registry:
   url: docker.io
-  namespace: "{{ docker_image_name | default('panyakorn130547') }}"
+  namespace: "{{ docker_image_name }}"
 
 # docker compose dir
 compose_dir: "/home/{{ ansible_user }}/ci-cd-gcp"
@@ -17,7 +16,7 @@ exporters:
   node_exporter_port: 9100
   cadvisor_port: 9102
 
-# ssh proxy args (iap tunnel)
+# ssh proxy args (IAP tunnel)
 ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null

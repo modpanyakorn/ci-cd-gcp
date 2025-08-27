@@ -1,10 +1,10 @@
 plugin: google.cloud.gcp_compute
 projects:
-  - adept-bridge-466219-v7
+  -
 zones:
-  - asia-southeast1-a
+  -
 auth_kind: serviceaccount
-service_account_file: /mnt/d/Panyakorn Learning/ci-cd-gcp/infrastructure/sa.json
+service_account_file:
 
 # Group hosts ตาม label เพื่อใช้ ansible group_vars
 keyed_groups:
