@@ -1,5 +1,4 @@
 # gcp meta
-ansible_user: "{{ gcp_ansible_user }}"
 project_id: "{{ gcp_project_id }}"
 zone: "{{ gcp_zone }}"
 
