@@ -146,7 +146,7 @@ pipeline {
                 }
             }
             when {
-                changeset pattern: 'application/server/', comparator: 'ANT'
+                changeset pattern: 'application/server/**', comparator: 'ANT'
             }
             steps {
                 dir('application/server') {
