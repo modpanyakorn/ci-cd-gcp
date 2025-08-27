@@ -1,0 +1,51 @@
+- name: Ensure jenkins is running
+  community.docker.docker_container:
+    name: jenkins
+    state: started
+
+- name: Copy SA file from controller to remote host
+  ansible.builtin.copy:
+    src: "../../../../sa.json"
+    dest: "/tmp/sa.json"
+    mode: "0600"
+
+- name: Copy SA file into vault container
+  ansible.builtin.shell: |
+    docker cp /tmp/sa.json jenkins:/tmp/sa.json
+
+- name: Check if key already exists inside Jenkins container
+  ansible.builtin.shell: |
+    docker exec jenkins test -f /root/.ssh/jenkins-gcp-key
+  register: key_check
+  failed_when: false
+  changed_when: false
+
+- name: Generate SSH keypair inside Jenkins container (if not exists)
+  ansible.builtin.shell: |
+    docker exec jenkins ssh-keygen -t ed25519 -f /root/.ssh/jenkins-gcp-key -N ""
+  when: key_check.rc != 0
+
+- name: Add Public key to project/vm metadata of GCP
+  ansible.builtin.shell: |
+    docker exec jenkins gcloud compute os-login ssh-keys add --key-file=/root/.ssh/jenkins-gcp-key.pub
+
+- name: Remove SA.json from Jenkins container
+  ansible.builtin.shell: |
+    docker exec jenkins rm -f /tmp/sa.json
+
+- name: Remove SA.json from remote host
+  ansible.builtin.file:
+    path: /tmp/sa.json
+    state: absent
+
+- name: Test SSH connectivity to frontend VM from Jenkins container
+  ansible.builtin.shell: |
+    docker exec jenkins ssh -o StrictHostKeyChecking=no \
+      -i /root/.ssh/jenkins-gcp-key \
+      {{ ansible_user }}@frontend-dev "echo 'SSH OK from Jenkins container'"
+  register: ssh_test
+  changed_when: false
+
+- name: Show SSH test result
+  ansible.builtin.debug:
+    var: ssh_test.stdout
