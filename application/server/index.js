@@ -43,6 +43,10 @@ app.get("/ping", (_req, res) => {
   return res.json({ msg: "Ping Successful" });
 });
 
+app.get("/health", (_req, res) => {
+  return res.json({ status: 200, msg: "OK" });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
