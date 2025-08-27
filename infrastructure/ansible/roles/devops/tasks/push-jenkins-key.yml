@@ -1,0 +1,15 @@
+- name: Push Jenkins public key to all target VMs
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure jenkins-ci user exists
+      ansible.builtin.user:
+        name: jenkins-ci
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Push Jenkins public key
+      ansible.builtin.authorized_key:
+        user: jenkins-ci
+        state: present
+        key: "{{ lookup('file', '/root/.ssh/jenkins-gcp-key.pub') }}"
