@@ -12,7 +12,7 @@ keyed_groups:
 hostnames:
   - name
 compose:
-  ansible_host: networkInterfaces[0].networkIP
+  ansible_host: name
 
 groups:
   nginx_proxy: "'nginx-dev' in name"
