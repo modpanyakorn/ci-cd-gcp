@@ -1,17 +1,17 @@
 [nginx_proxy]
-${nginx_vm_name} ansible_host=${nginx_vm_name} ansible_user=$${ANSIBLE_USER}
+${nginx_vm_name} ansible_host=${nginx_vm_name} ansible_user={{ gcp_ansible_user }}
 
 [frontend]
-${frontend_vm_name} ansible_host=${frontend_vm_name} ansible_user=$${ANSIBLE_USER}
+${frontend_vm_name} ansible_host=${frontend_vm_name} ansible_user={{ gcp_ansible_user }}
 
 [backend]
-${backend_vm_name} ansible_host=${backend_vm_name} ansible_user=$${ANSIBLE_USER}
+${backend_vm_name} ansible_host=${backend_vm_name} ansible_user={{ gcp_ansible_user }}
 
 [db]
-${db_vm_name} ansible_host=${db_vm_name} ansible_user=$${ANSIBLE_USER}
+${db_vm_name} ansible_host=${db_vm_name} ansible_user={{ gcp_ansible_user }}
 
 [devops]
-${devops_vm_name} ansible_host=${devops_vm_name} ansible_user=$${ANSIBLE_USER}
+${devops_vm_name} ansible_host=${devops_vm_name} ansible_user={{ gcp_ansible_user }}
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
