@@ -1,0 +1,221 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = 'docker.io'
+        IMAGE    = 'ci-cd-gcp-chat-web-application-backend'
+        COMMIT   = "${env.GIT_COMMIT[0..6]}"
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/modpanyakorn/ci-cd-gcp.git'
+                sh 'ls -la'
+            }
+        }
+
+        stage('Fetch SA from Vault') {
+            steps {
+                sh '''
+                  echo ">>> ดึง Service Account จาก Vault"
+                  docker exec vault vault kv get -format=json ci-cd-gcp/dev/gcp-sa \
+                    | jq -r '.data.data.key' \
+                    | jq -r '.' > sa.json
+
+                  echo ">>> Preview SA.json"
+                  head -n 5 sa.json
+                '''
+                stash includes: 'sa.json', name: 'sa-key'
+            }
+        }
+
+        stage('Render inventory') {
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE')
+                ]) {
+                    sh '''
+                      echo ">>> Render inventory.gcp.yml"
+                      cd infrastructure/ansible/inventory
+
+                      sed "s|{{ gcp_project_id }}|$PROJECT_ID|g;
+                           s|{{ gcp_zone }}|$ZONE|g;
+                           s|{{ service_account_file }}|$WORKSPACE/sa.json|g" \
+                           ../templates/inventory.gcp.yml.j2 > inventory.gcp.yml
+
+                      echo ">>> Preview inventory.gcp.yml"
+                      cat inventory.gcp.yml
+                    '''
+                }
+            }
+        }
+
+        stage('Generate SSH keypair') {
+            steps {
+                sh '''
+                  echo ">>> Generate Jenkins CI keypair"
+                  mkdir -p infrastructure/ansible/inventory
+                  if [ ! -f infrastructure/ansible/inventory/jenkins-gcp-key ]; then
+                    ssh-keygen -t ed25519 -f infrastructure/ansible/inventory/jenkins-gcp-key -C "jenkins-ci" -N ""
+                    chmod 600 infrastructure/ansible/inventory/jenkins-gcp-key
+                  else
+                    echo ">>> Keypair already exists, skip generating"
+                  fi
+                '''
+            }
+        }
+
+        stage('Push Jenkins key to VM') {
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE')
+                ]) {
+                    sh '''
+                      echo ">>> gcloud auth"
+                      gcloud auth activate-service-account --key-file=sa.json
+                      gcloud config set project $PROJECT_ID
+                      gcloud config set compute/zone $ZONE
+
+                      cd infrastructure/ansible
+                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
+
+                      echo ">>> Push Jenkins CI public key"
+                      ansible-playbook -i ./inventory roles/devops/tasks/push-jenkins-key.yml
+                    '''
+                }
+            }
+        }
+
+        stage('Test Ansible Ping') {
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+                ]) {
+                    sh '''
+                      echo ">>> gcloud auth"
+                      gcloud auth activate-service-account --key-file=sa.json
+                      gcloud config set project $PROJECT_ID
+                      gcloud config set compute/zone $ZONE
+
+                      cd infrastructure/ansible
+                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
+                      ansible-inventory -i ./inventory --graph
+
+                      echo ">>> Run ansible ping"
+                      ansible all -m ping -i ./inventory \
+                        --extra-vars "gcp_project_id=$PROJECT_ID gcp_zone=$ZONE docker_image_name=$REGISTRY_NAMESPACE"
+                    '''
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    withCredentials([string(credentialsId: 'sonar-qube-token', variable: 'SONAR_TOKEN')]) {
+                        dir('application/server') {
+                            script {
+                                def scannerHome = tool 'SonarQubeScanner'
+                                sh """
+                                    ${scannerHome}/bin/sonar-scanner \
+                                        -Dsonar.projectKey=chat-app-backend \
+                                        -Dsonar.sources=. \
+                                        -Dsonar.host.url=$SONAR_HOST_URL \
+                                        -Dsonar.token=$SONAR_TOKEN
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Backend') {
+            agent {
+                docker {
+                    image 'node:24.5.0-alpine3.22'
+                    args  '-u root:root -v $HOME/.npm:/root/.npm -v $WORKSPACE/application/server/node_modules:/var/jenkins_home/workspace/node_modules'
+                }
+            }
+            when {
+                changeset pattern: 'application/server/', comparator: 'ANT'
+            }
+            steps {
+                dir('application/server') {
+                    sh '''
+                      npm install
+                    '''
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            when {
+                anyOf {
+                    changeset pattern: 'application/server/**', comparator: 'ANT'
+                }
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    dir('application/server') {
+                        sh """
+                          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                          docker build -t $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT -f ./Dockerfile.cicd .
+                          docker push $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
+                          docker rmi $REGISTRY/$DOCKER_USER/$IMAGE:$COMMIT
+                          docker logout
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            when {
+                changeset 'application/server/**'
+            }
+            steps {
+                unstash 'sa-key'
+                withCredentials([
+                    string(credentialsId: 'gcp-project-id', variable: 'PROJECT_ID'),
+                    string(credentialsId: 'gcp-zone', variable: 'ZONE'),
+                    string(credentialsId: 'dockerhub-namespace', variable: 'REGISTRY_NAMESPACE')
+                ]) {
+                    sh '''
+                        gcloud auth activate-service-account --key-file=sa.json
+                        gcloud config set project $PROJECT_ID
+                        gcloud config set compute/zone $ZONE
+
+                        cd infrastructure/ansible
+                        export ANSIBLE_CONFIG=./ansible.cicd.cfg
+
+                        echo ">>> Deploy backend"
+                        ansible-playbook -i ./inventory \
+                            ./playbooks/backend-deploy.yml \
+                            --extra-vars "backend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE project_id=$PROJECT_ID zone=$ZONE"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Backend pipeline success'
+        }
+        failure {
+            echo '❌ Backend pipeline failed!'
+        }
+        always {
+            sh 'rm -f sa.json || true'
+        }
+    }
+}
