@@ -55,6 +55,8 @@ app.get("/health", (_req, res) => {
     timestamp: Date.now(),
     service: "backend",
     version: "1.0.0",
+    address: req.ip,
+    your_host: req.hostname,
   });
 });
 
