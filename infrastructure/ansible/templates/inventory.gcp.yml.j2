@@ -1,0 +1,23 @@
+plugin: google.cloud.gcp_compute
+projects:
+  - {{ gcp_project_id }}
+zones:
+  - {{ gcp_zone }}
+auth_kind: serviceaccount
+service_account_file: {{ service_account_file }}
+
+keyed_groups:
+  - key: labels
+
+hostnames:
+  - name
+
+compose:
+  ansible_host: name
+
+groups:
+  nginx_proxy: "'nginx-dev' in name"
+  frontend: "'frontend-dev' in name"
+  backend: "'backend-dev' in name"
+  db: "'db-dev' in name"
+  devops: "'devops-dev' in name"
