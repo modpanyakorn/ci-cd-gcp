@@ -1,6 +1,6 @@
 frontend:
   image: "{{ registry.url }}/{{ registry.namespace }}/ci-cd-gcp-chat-web-application-frontend"
-  tag: "{{ frontend_tag }}"
+  tag: "{{ frontend_tag | default('latest') }}"
   port: 3000
   nginx_exporter_port: 9104
   env:
