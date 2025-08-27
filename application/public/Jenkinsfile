@@ -108,9 +108,11 @@ pipeline {
                       gcloud config set project $PROJECT_ID
                       gcloud config set compute/zone $ZONE
 
-                      export ANSIBLE_CONFIG=infrastructure/ansible/ansible.cicd.cfg
-                      ansible-playbook -i infrastructure/ansible/inventory/hosts.ini \
-                        infrastructure/ansible/playbooks/frontend-deploy.yml \
+                      cd infrastructure/ansible
+                      export ANSIBLE_CONFIG=./ansible.cicd.cfg
+                      ansible --version
+                      ansible-playbook -i ./inventory/hosts.ini \
+                        ./playbooks/frontend-deploy.yml \
                         --extra-vars "frontend_tag=$COMMIT registry_url=$REGISTRY registry_namespace=$REGISTRY_NAMESPACE ansible_user=$ANSIBLE_USER project_id=$PROJECT_ID zone=$ZONE"
                     '''
                 }
