@@ -40,7 +40,7 @@ mongoose.connection.on("disconnected", () => {
 });
 
 app.get("/ping", (_req, res) => {
-  return res.json({ msg: "Ping Successful" });
+  return res.json({ msg: "Ping Successful", status: "success" });
 });
 
 app.get("/health", (_req, res) => {
