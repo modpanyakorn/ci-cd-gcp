@@ -57,6 +57,7 @@ app.get("/health", (_req, res) => {
     version: "1.0.0",
     address: req.ip,
     your_host: req.hostname,
+    request_url: req.originalUrl,
   });
 });
 
