@@ -1,7 +1,7 @@
 # gcp meta
-ansible_user: "{{ gcp_ansible_user | default('sa_110818079319396337681') }}"
-project_id: "{{ gcp_project_id | default('adept-bridge-466219-v7') }}"
-zone: "{{ gcp_zone | default('asia-southeast1-a') }}"
+ansible_user: "{{ gcp_ansible_user | default('ัyour-service-account') }}"
+project_id: "{{ gcp_project_id | default('your-gcp-project-id') }}"
+zone: "{{ gcp_zone | default('your-gcp-project-zone') }}"
 
 # docker registry
 registry:
